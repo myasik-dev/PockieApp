@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:id="@+id/filter_all"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/all"
+        android:textSize="15sp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_pill_black"
+        android:textColor="#FFFFFF"
+        android:clickable="true"
+        android:focusable="true" />
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:id="@+id/filter_expense"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/expense"
+        android:textSize="15sp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_pill_outline"
+        android:textColor="#B7B7B7"
+        android:clickable="true"
+        android:focusable="true" />
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:id="@+id/filter_income"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/income"
+        android:textSize="15sp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:layout_marginEnd="0dp"
+        android:background="@drawable/bg_pill_outline"
+        android:textColor="#B7B7B7"
+        android:clickable="true"
+        android:focusable="true" />
+</LinearLayout>

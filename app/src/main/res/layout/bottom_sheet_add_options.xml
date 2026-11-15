@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="false"
+    android:scrollbars="none">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="18dp">
+        <include layout="@layout/view_sheet_header" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:id="@+id/manual_choice"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="11dp"
+            android:paddingRight="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/bg_choice_manual"
+            android:contentDescription="@string/add_expense_income"
+            android:clickable="true"
+            android:focusable="true">
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_choice_badge_manual">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/addexp_2"
+                    android:scaleType="fitCenter"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_weight="1"
+                android:paddingLeft="11dp"
+                android:paddingRight="2dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/add_expense_income"
+                    android:textSize="16sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text"
+                    android:text="@string/manually_add_your_income_or_expense_entry"
+                    android:textSize="12sp"
+                    android:textColor="#596B93"
+                    android:layout_marginTop="3dp" />
+            </LinearLayout>
+            <com.pockie.app.PockieIcon
+                android:layout_width="23dp"
+                android:layout_height="23dp"
+                app:iconName="next"
+                app:iconTint="#30BB6B"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:id="@+id/scan_sms_choice"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="11dp"
+            android:layout_marginTop="12dp"
+            android:paddingRight="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/bg_choice_sms"
+            android:contentDescription="@string/scan_sms"
+            android:clickable="true"
+            android:focusable="true">
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_choice_badge_sms">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/addexp_1"
+                    android:scaleType="fitCenter"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_weight="1"
+                android:paddingLeft="11dp"
+                android:paddingRight="2dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/scan_sms"
+                    android:textSize="16sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text"
+                    android:text="@string/automatically_read_sms_and_create_income_or_expense"
+                    android:textSize="12sp"
+                    android:textColor="#596B93"
+                    android:layout_marginTop="3dp" />
+            </LinearLayout>
+            <com.pockie.app.PockieIcon
+                android:layout_width="23dp"
+                android:layout_height="23dp"
+                app:iconName="next"
+                app:iconTint="#FF7900"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:id="@+id/receipt_choice"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="11dp"
+            android:paddingRight="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/bg_choice_receipt"
+            android:layout_marginTop="12dp"
+            android:contentDescription="@string/scan_receipts"
+            android:clickable="true"
+            android:focusable="true">
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_choice_badge_receipt">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/addexp_3"
+                    android:scaleType="fitCenter"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_weight="1"
+                android:paddingLeft="11dp"
+                android:paddingRight="2dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/scan_receipts"
+                    android:textSize="16sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text"
+                    android:text="@string/take_a_photo_of_your_bills_and_create_an_expense"
+                    android:textSize="12sp"
+                    android:textColor="#596B93"
+                    android:layout_marginTop="3dp" />
+            </LinearLayout>
+            <com.pockie.app.PockieIcon
+                android:layout_width="23dp"
+                android:layout_height="23dp"
+                app:iconName="next"
+                app:iconTint="#9C52FF"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

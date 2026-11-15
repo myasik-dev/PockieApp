@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
+    <include layout="@layout/view_toolbar" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
+        android:paddingBottom="20dp">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:id="@+id/search_bar_container"
+            android:background="@drawable/bg_search_bar"
+            android:visibility="gone"
+            android:layout_marginBottom="18dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp">
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/search_input"
+                style="@style/Pockie.Input"
+                android:hint="@string/search_your_expense"
+                android:textColorHint="#9E9E9E"
+                android:textColor="#030505"
+                android:textSize="14sp"
+                android:paddingStart="4dp"
+                android:paddingEnd="36dp"
+                android:paddingLeft="4dp"
+                android:paddingRight="36dp"
+                android:importantForAutofill="no"
+                android:imeOptions="actionSearch"
+                android:inputType="text" />
+
+
+            <com.pockie.app.PockieIcon
+                android:id="@+id/search_clear"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                app:iconName="close"
+                app:iconTint="#A9030505"
+                android:importantForAccessibility="no"
+                android:gravity="center"
+                android:layout_gravity="end|center_vertical"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </FrameLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:id="@+id/category_filter_chip"
+            style="@style/Pockie.Text"
+            android:text="@string/category_food"
+            android:textSize="12sp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_category_chip"
+            android:textColor="#148BFF"
+            android:layout_marginBottom="14dp"
+            android:visibility="gone"
+            android:clickable="true" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:id="@+id/search_filter_chip"
+            style="@style/Pockie.Text"
+            android:text="@string/search"
+            android:textSize="13sp"
+            android:textColor="#4E5760"
+            android:visibility="gone"
+            android:clickable="true" />
+        <include layout="@layout/view_transaction_filters" />
+        <Space android:layout_width="match_parent" android:layout_height="18dp" />
+    </LinearLayout>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="none">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/transaction_list"
+            android:orientation="vertical"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:paddingBottom="16dp" />
+    </ScrollView>
+</LinearLayout>

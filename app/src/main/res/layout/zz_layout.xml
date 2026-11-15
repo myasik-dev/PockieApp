@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/spl_img2"
+        android:scaleType="centerCrop"
+        android:importantForAccessibility="no" />
+
+    <RelativeLayout
+        android:id="@+id/layout_data1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="55dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/track_your_expenses"
+                android:textSize="36sp"
+                android:fontFamily="@font/poppins_bold"
+                android:textColor="#010203"
+                android:paddingLeft="22dp"
+                android:paddingRight="22dp"
+                android:includeFontPadding="false"
+                android:lineSpacingExtra="-8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/automatically"
+                android:textSize="36sp"
+                android:paddingLeft="22dp"
+                android:paddingRight="22dp"
+                android:fontFamily="@font/poppins_bold"
+                android:textColor="#008CFF"
+                android:includeFontPadding="false"
+                android:lineSpacingExtra="-2dp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/we_read_your_bank_sms_and_organize_your_spending_for_you"
+                    android:textSize="16sp"
+                    android:paddingLeft="22dp"
+                    android:paddingRight="22dp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textColor="#010203"
+                    android:layout_marginTop="8dp" />
+
+                <ImageView
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/spl_img3"
+                    android:scaleType="fitCenter"
+                    android:layout_marginEnd="-15dp"
+                    android:layout_alignParentEnd="true"
+                    android:importantForAccessibility="no" />
+            </RelativeLayout>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:id="@+id/layout_data2"
+        android:layout_below="@+id/layout_data1"
+        android:layout_above="@+id/layout_data3"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="15dp"
+        android:gravity="center"
+        android:paddingLeft="22dp"
+        android:paddingRight="22dp">
+
+        <ImageView
+            android:layout_width="239dp"
+            android:layout_height="223dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginTop="150dp"
+            android:layout_marginEnd="48dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/mascot_welcome" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="205dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:background="@drawable/bg_onboarding_card"
+                android:rotation="7"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/bank_sms"
+                    android:textSize="14sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text"
+                    android:text="@string/your_a_c_xxxx5083_is_debited_rs_328_00_to_swiggy"
+                    android:textSize="12sp"
+                    android:textColor="#4E5760"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="130dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:rotation="7"
+                android:layout_marginTop="10dp"
+                android:layout_gravity="end|center_vertical">
+                <ImageView
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/spl_img4"
+                    android:scaleType="fitCenter"
+                    android:layout_gravity="bottom|start"
+                    android:importantForAccessibility="no" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="140dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginBottom="5dp"
+                android:background="@drawable/bg_onboarding_added"
+                android:rotation="-5"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginTop="0dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text"
+                    android:text="@string/automatically_added"
+                    android:textSize="12sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/swiggy"
+                    android:textSize="14sp"
+                    android:textColor="#FA7A00"
+                    android:layout_marginTop="10dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/text_328"
+                    android:textSize="17sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:id="@+id/layout_data3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="25dp"
+        android:paddingLeft="22dp"
+        android:paddingRight="22dp"
+        android:layout_alignParentBottom="true">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:id="@+id/get_started"
+            style="@style/Pockie.Text.Bold"
+            android:text="@string/get_started"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:background="@drawable/bg_primary_gradient"
+            android:textColor="#FFFFFF"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/get_started" />
+
+    </RelativeLayout>
+
+
+
+</RelativeLayout>

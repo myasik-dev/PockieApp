@@ -1,0 +1,33 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.pockie.app'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.pockie.app'
+        minSdk 26
+        targetSdk 36
+        versionCode 3
+        versionName '1.0.2'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    buildTypes {
+        release { minifyEnabled false }
+        receiptQa {
+            initWith debug
+            applicationIdSuffix '.receiptqa'
+            matchingFallbacks = ['debug']
+        }
+    }
+    testBuildType 'receiptQa'
+}
+
+dependencies {
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+}

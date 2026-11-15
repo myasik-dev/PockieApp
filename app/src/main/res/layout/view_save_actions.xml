@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="46dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="46dp"
+        android:id="@+id/cancel_transaction"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/cancel"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:background="@drawable/bg_button_cancel"
+        android:textColor="#030505"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/cancel"
+        android:layout_weight="1"
+        android:layout_marginEnd="12dp" />
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="46dp"
+        android:id="@+id/save_transaction"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/save"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:background="@drawable/bg_button_black"
+        android:textColor="#FFFFFF"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/save"
+        android:layout_weight="1" />
+</LinearLayout>

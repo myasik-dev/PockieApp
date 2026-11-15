@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="58dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true">
+    <FrameLayout
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:id="@+id/report_category_badge"
+        android:background="@drawable/bg_category_badge">
+        <ImageView
+            android:layout_width="29dp"
+            android:layout_height="29dp"
+            android:id="@+id/report_category_art"
+            android:src="@drawable/category_food"
+            android:scaleType="fitCenter"
+            android:importantForAccessibility="no"
+            android:layout_gravity="center" />
+    </FrameLayout>
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/report_category_name"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/food"
+        android:textSize="15sp"
+        android:layout_weight="1"
+        android:paddingLeft="12dp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/report_category_amount"
+        style="@style/Pockie.Text"
+        android:text="@string/text_0_0"
+        android:textSize="13sp"
+        android:textColor="#4E5760" />
+</LinearLayout>

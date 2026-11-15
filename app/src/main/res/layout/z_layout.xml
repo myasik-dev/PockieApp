@@ -1,0 +1,353 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none"
+    android:background="#C2F1FC">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="15dp">
+
+                <FrameLayout
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:id="@+id/open_settings"
+                    android:contentDescription="@string/open_settings"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="9dp">
+                    <com.pockie.app.PockieIcon
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:iconName="grid"
+                        app:iconTint="#2B3E4B"
+                        android:importantForAccessibility="no"
+                        android:layout_gravity="center" />
+                </FrameLayout>
+                <FrameLayout
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_alignParentRight="true"
+                    android:id="@+id/tracking_status"
+                    android:contentDescription="@string/tracking_status"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="9dp">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/hme_img2"
+                        android:scaleType="fitCenter"/>
+                </FrameLayout>
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="162dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="22dp">
+
+                    <ImageView
+                        android:layout_width="98dp"
+                        android:layout_height="35dp"
+                        android:layout_gravity="left"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/hme_img4" />
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:src="@drawable/hme_img3"
+                        android:scaleType="fitCenter"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/Pockie.Text"
+                        android:text="@string/let_s_track_your_expense_today"
+                        android:textSize="13sp"
+                        android:textColor="#607C8A"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/mascot_home"
+                    android:layout_width="215dp"
+                    android:layout_height="190dp"
+                    android:layout_alignParentRight="true"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/mascot_home" />
+
+            </RelativeLayout>
+
+
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-68dp">
+
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="124dp"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:paddingLeft="17dp"
+                        android:paddingRight="16dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:gravity="center|left"
+                        android:background="@drawable/hme_img1">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/total_spending"
+                            android:textSize="16sp"
+                            android:includeFontPadding="false"
+                            android:fontFamily="@font/poppins_semibold"
+                            android:textColor="#010203"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/home_month"
+                            android:text="@string/this_month"
+                            android:textSize="16sp"
+                            android:includeFontPadding="false"
+                            android:fontFamily="@font/poppinsmedium"
+                            android:textColor="#5F5836"
+                            android:layout_marginTop="4dp" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="₹"
+                                android:textSize="30sp"
+                                android:textColor="#010203"
+                                android:fontFamily="@font/robobold"
+                                android:includeFontPadding="false"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:id="@+id/home_spending"
+                                android:text="10,000"
+                                android:layout_marginLeft="5dp"
+                                android:textSize="30sp"
+                                android:textColor="#010203"
+                                android:includeFontPadding="false"
+                                android:fontFamily="@font/poppins_bold"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+
+
+
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginStart="16dp"
+                android:layout_marginBottom="15dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="16dp">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="12dp"
+                    android:gravity="center"
+                    android:background="@drawable/hme_img5">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="24dp"
+                        android:id="@+id/home_income"
+                        android:fontFamily="@font/robobold"
+                        android:text="₹ 1,00,000"
+                        android:textSize="16sp"
+                        android:gravity="center"
+
+                        android:textColor="#010203"
+                        android:maxLines="1"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="10sp"
+                        android:autoSizeMaxTextSize="18sp"
+                        android:autoSizeStepGranularity="1sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="18dp"
+                        android:fontFamily="@font/runzomed"
+                        android:text="@string/income"
+                        android:textSize="14sp"
+                        android:layout_marginTop="3dp"
+                        android:gravity="center"
+                        android:textColor="#00BC78" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="12dp"
+                    android:gravity="center"
+                    android:background="@drawable/hme_img5">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="24dp"
+                        android:id="@+id/home_average"
+                        android:fontFamily="@font/robobold"
+                        android:text="₹50,000"
+                        android:textSize="16sp"
+
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:textColor="#010203"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="10sp"
+                        android:autoSizeMaxTextSize="18sp"
+                        android:autoSizeStepGranularity="1sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="18dp"
+                        android:fontFamily="@font/runzomed"
+                        android:text="@string/avg_day"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:layout_marginTop="3dp"
+                        android:textColor="#777777" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="0dp"
+                    android:gravity="center"
+                    android:background="@drawable/hme_img5">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="24dp"
+                        android:id="@+id/home_expense"
+                        android:fontFamily="@font/robobold"
+                        android:text="₹ 10,000"
+                        android:textSize="18sp"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:textColor="#010203"
+
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="10sp"
+                        android:autoSizeMaxTextSize="18sp"
+                        android:autoSizeStepGranularity="1sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="18dp"
+                        android:fontFamily="@font/runzomed"
+                        android:text="@string/expense"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:layout_marginTop="3dp"
+                        android:textColor="#FF242D" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/home_recent"
+            android:orientation="vertical"
+            android:paddingLeft="17dp"
+            android:paddingRight="17dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="22dp"
+            android:minHeight="200dp"
+            android:background="@drawable/bg_recent">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="35dp"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/recent_expense"
+                    android:textSize="17sp"
+                    android:layout_weight="1" />
+                <TextView
+                    android:layout_width="65dp"
+                    android:layout_height="40dp"
+                    android:id="@+id/see_all"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/see_all"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:paddingLeft="12dp"
+                    android:textColor="#148BFF"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/recent_transactions"
+                android:orientation="vertical" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:id="@+id/clear_demo_home"
+                style="@style/Pockie.Text"
+                android:text="@string/sample_data_clear_to_start_tracking"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:textColor="#4E5760"
+                android:visibility="gone"
+                android:clickable="true" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</ScrollView>

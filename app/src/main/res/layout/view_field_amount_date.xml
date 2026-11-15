@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="46dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="11dp">
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="46dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="13dp"
+        android:paddingRight="10dp"
+        android:background="@drawable/bg_field"
+        android:layout_marginBottom="0dp"
+        android:layout_weight="1"
+        android:layout_marginEnd="11dp">
+        <com.pockie.app.PockieIcon
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            app:iconName="rupee"
+            app:iconTint="#666886"
+            android:importantForAccessibility="no" />
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:id="@+id/amount_input"
+            style="@style/Pockie.Input"
+            android:hint="@string/amount"
+            android:contentDescription="@string/amount"
+            android:inputType="numberDecimal"
+            android:singleLine="true"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="46dp"
+        android:id="@+id/date_selector"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_weight="1"
+        android:paddingLeft="12dp"
+        android:paddingRight="6dp"
+        android:background="@drawable/bg_field"
+        android:contentDescription="@string/transaction_date"
+        android:clickable="true"
+        android:focusable="true">
+        <com.pockie.app.PockieIcon
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            app:iconName="calendar"
+            app:iconTint="#666886"
+            android:importantForAccessibility="no" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/selected_date"
+            style="@style/Pockie.Text.Bold"
+            android:text="@string/date"
+            android:textSize="13sp"
+            android:layout_weight="1"
+            android:paddingLeft="10dp" />
+    </LinearLayout>
+</LinearLayout>

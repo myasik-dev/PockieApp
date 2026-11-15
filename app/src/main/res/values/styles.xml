@@ -1,0 +1,12 @@
+<resources>
+    <style name="Theme.Pockie" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="colorPrimary">#168BFF</item>
+        <item name="colorPrimaryVariant">#0064FF</item>
+        <item name="colorSecondary">#00BD79</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:colorAccent">#168BFF</item>
+    </style>
+</resources>

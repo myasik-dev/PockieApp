@@ -1,0 +1,242 @@
+<?xml version='1.0' encoding='utf-8'?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingLeft="22dp"
+    android:paddingRight="22dp"
+    android:paddingBottom="10dp"
+    android:background="#FFFBF0">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/skip_sms"
+        android:fontFamily="@font/poppinsmedium"
+        android:layout_alignParentRight="true"
+        android:text="Skip Now"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:textColor="#0087F5"
+        android:layout_marginTop="35dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <LinearLayout
+        android:layout_above="@+id/layout_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+    <ImageView
+        android:id="@+id/mascot_sms"
+        android:layout_width="280dp"
+        android:layout_height="250dp"
+        android:src="@drawable/mascot_sms"
+        android:scaleType="fitCenter"
+        android:layout_gravity="center"
+        android:importantForAccessibility="no"
+        android:layout_weight="1" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins_bold"
+        android:includeFontPadding="false"
+        android:textColor="#010203"
+        android:text="@string/allow_sms_access"
+        android:textSize="24sp"
+        android:gravity="center" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins_regular"
+        android:text="@string/we_need_permission_to_read_your_bank_sms_to_automatically_track_"
+        android:textSize="16dp"
+        android:includeFontPadding="false"
+        android:gravity="center"
+        android:textColor="#3F4D4E"
+        android:layout_marginTop="8dp" />
+    <Space android:layout_width="match_parent" android:layout_height="34dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_benefit"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_green_circle">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/prm_img1"
+                android:scaleType="fitCenter"/>
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:paddingLeft="14dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_bold"
+                android:includeFontPadding="false"
+                android:textColor="#010203"
+                android:text="@string/text_100_private"
+                android:textSize="14sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:includeFontPadding="false"
+                android:textColor="#3F4D4E"
+                android:text="@string/data_stays_only_on_your_device"
+                android:textSize="12sp"
+                android:layout_marginTop="3dp" />
+        </LinearLayout>
+    </LinearLayout>
+    <Space android:layout_width="match_parent" android:layout_height="12dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_benefit"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_green_circle">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/prm_img2"
+                android:scaleType="fitCenter"/>
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:paddingLeft="14dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_bold"
+                android:includeFontPadding="false"
+                android:textColor="#010203"
+                android:text="@string/supports_all_major_banks"
+                android:textSize="14sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:includeFontPadding="false"
+                android:textColor="#3F4D4E"
+                android:text="@string/kvb_axis_sbi_hdfc_icici_more"
+                android:textSize="12sp"
+               android:layout_marginTop="3dp" />
+        </LinearLayout>
+    </LinearLayout>
+    <Space android:layout_width="match_parent" android:layout_height="12dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_benefit"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_green_circle">
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/prm_img3"
+                android:scaleType="fitCenter"/>
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:paddingLeft="14dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_bold"
+                android:includeFontPadding="false"
+                android:textColor="#010203"
+                android:text="@string/works_offline"
+                android:textSize="14sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/everything_is_offline_secure"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_regular"
+                android:includeFontPadding="false"
+                android:textColor="#3F4D4E"
+                android:layout_marginTop="3dp" />
+        </LinearLayout>
+    </LinearLayout>
+    <Space android:layout_width="match_parent" android:layout_height="12dp" />
+    <Space android:layout_width="match_parent" android:layout_height="12dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:id="@+id/allow_sms"
+            style="@style/Pockie.Text.Bold"
+            android:text="@string/allow_sms_access_2"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:background="@drawable/bg_primary_gradient"
+            android:textColor="#FFFFFF"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/allow_sms_access_2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            style="@style/Pockie.Text"
+            android:layout_marginTop="10dp"
+            android:text="@string/your_data_never_leaves_your_phone"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:textColor="#8C949B" />
+
+    </LinearLayout>
+</RelativeLayout>

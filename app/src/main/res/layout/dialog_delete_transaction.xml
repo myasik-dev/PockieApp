@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@drawable/bg_dialog">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/dialog_title"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/delete_expense"
+        android:textSize="20sp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/dialog_message"
+        style="@style/Pockie.Text"
+        android:text="@string/are_you_sure_you_want_to_delete_this_expense_record"
+        android:textSize="14sp"
+        android:textColor="#45565B"
+        android:layout_marginTop="8dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="12dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:id="@+id/dialog_cancel"
+            style="@style/Pockie.Text"
+            android:text="@string/cancel_2"
+            android:textSize="14sp"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:gravity="center"
+            android:textColor="#969696"
+            android:clickable="true" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:id="@+id/dialog_confirm"
+            style="@style/Pockie.Text"
+            android:text="@string/delete_2"
+            android:textSize="14sp"
+            android:paddingLeft="12dp"
+            android:paddingRight="4dp"
+            android:gravity="center"
+            android:textColor="#148BFF"
+            android:clickable="true" />
+    </LinearLayout>
+</LinearLayout>

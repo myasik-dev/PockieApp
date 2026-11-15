@@ -1,0 +1,1 @@
+<resources><declare-styleable name="PockieIcon"><attr name="iconName" format="string"/><attr name="iconTint" format="color"/></declare-styleable></resources>

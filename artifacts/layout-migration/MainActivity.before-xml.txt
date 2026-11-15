@@ -1,0 +1,1972 @@
+package com.pockie.app;
+
+import static com.pockie.app.Ui.*;
+
+import android.Manifest;
+import android.app.*;
+import android.content.*;
+import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.database.Cursor;
+import android.graphics.*;
+import android.net.Uri;
+import android.os.*;
+import android.provider.*;
+import android.view.*;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.*;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import com.google.android.material.bottomsheet.*;
+import java.io.*;
+import java.math.BigDecimal;
+import java.text.*;
+import java.util.*;
+import java.util.concurrent.*;
+import org.json.*;
+
+public class MainActivity extends AppCompatActivity {
+  private ExpenseStore store;
+  private android.content.SharedPreferences prefs;
+  private FrameLayout root, body;
+  private LinearLayout navigation;
+  private String screen = "Home", filter = "All", categoryFilter = "", query = "";
+  private int onboarding = 0;
+  private final Calendar reportMonth = Calendar.getInstance();
+  private final ExecutorService worker = Executors.newSingleThreadExecutor();
+  private Uri cameraUri;
+  private String pendingExport = "csv";
+  private boolean registered, scanning;
+  private final String[] categories = {
+    "Food", "Fuel", "Shopping", "Business", "Recharge", "Transfers"
+  };
+  private final int[] categoryColors = {
+    0xffffecc1, 0xffc4efff, 0xfffbd5e6, 0xffe0dcff, 0xffcbfaef, 0xfffff2b1
+  };
+  private final BroadcastReceiver refresh =
+      new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent i) {
+          if (onboarding == 2) render();
+        }
+      };
+
+  @Override
+  public void onCreate(Bundle state) {
+    super.onCreate(state);
+    store = new ExpenseStore(this);
+    prefs = Tracking.prefs(this);
+    getOnBackPressedDispatcher()
+        .addCallback(
+            this,
+            new androidx.activity.OnBackPressedCallback(true) {
+              @Override
+              public void handleOnBackPressed() {
+                if (onboarding == 1) {
+                  onboarding = 0;
+                  render();
+                } else if (!screen.equals("Home")) {
+                  go("Home");
+                } else {
+                  setEnabled(false);
+                  getOnBackPressedDispatcher().onBackPressed();
+                  setEnabled(true);
+                }
+              }
+            });
+    getWindow()
+        .setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    getWindow().setNavigationBarColor(Color.WHITE);
+    if (Build.VERSION.SDK_INT >= 28) {
+      WindowManager.LayoutParams attributes = getWindow().getAttributes();
+      attributes.layoutInDisplayCutoutMode =
+          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+      getWindow().setAttributes(attributes);
+    }
+    if (state != null) {
+      screen = state.getString("screen", "Home");
+      filter = state.getString("filter", "All");
+      categoryFilter = state.getString("category", "");
+      query = state.getString("query", "");
+      pendingExport = state.getString("export", "csv");
+      String uri = state.getString("camera");
+      if (uri != null) cameraUri = Uri.parse(uri);
+    }
+    onboarding = prefs.getBoolean("onboarded", false) ? 2 : 0;
+    if (state != null) onboarding = state.getInt("onboarding", onboarding);
+    root = new FrameLayout(this);
+    root.setBackgroundColor(Color.WHITE);
+    setContentView(root);
+    androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
+        root,
+        (v, insets) -> {
+          androidx.core.graphics.Insets bars =
+              insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+          androidx.core.graphics.Insets ime =
+              insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime());
+          v.setPadding(bars.left, 0, bars.right, Math.max(bars.bottom, ime.bottom));
+          return insets;
+        });
+    render();
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle state) {
+    super.onSaveInstanceState(state);
+    state.putString("screen", screen);
+    state.putString("filter", filter);
+    state.putString("category", categoryFilter);
+    state.putString("query", query);
+    state.putInt("onboarding", onboarding);
+    state.putString("export", pendingExport);
+    if (cameraUri != null) state.putString("camera", cameraUri.toString());
+  }
+
+  @Override
+  protected void onStart() {
+    super.onStart();
+    IntentFilter f = new IntentFilter(ExpenseStore.CHANGED);
+    androidx.core.content.ContextCompat.registerReceiver(
+        this, refresh, f, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
+    registered = true;
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    if (root != null && onboarding == 2 && screen.equals("Settings")) render();
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    if (registered) unregisterReceiver(refresh);
+    registered = false;
+  }
+
+  @Override
+  protected void onDestroy() {
+    worker.shutdown();
+    store.close();
+    super.onDestroy();
+  }
+
+  private int d(float n) {
+    return dp(this, n);
+  }
+
+  private LinearLayout.LayoutParams lp(int w, int h) {
+    return new LinearLayout.LayoutParams(w < 0 ? w : d(w), h < 0 ? h : d(h));
+  }
+
+  private FrameLayout.LayoutParams fp(
+      int w, int h, int gravity, int left, int top, int right, int bottom) {
+    FrameLayout.LayoutParams p =
+        new FrameLayout.LayoutParams(w < 0 ? w : d(w), h < 0 ? h : d(h), gravity);
+    p.setMargins(d(left), d(top), d(right), d(bottom));
+    return p;
+  }
+
+  private void add(LinearLayout parent, View v, int height) {
+    parent.addView(v, lp(-1, height));
+  }
+
+  private void go(String next) {
+    screen = next;
+    filter = "All";
+    categoryFilter = "";
+    query = "";
+    render();
+  }
+
+  private void toast(String s) {
+    Toast.makeText(this, s, Toast.LENGTH_LONG).show();
+  }
+
+  private TextView label(String s, float size, int color, boolean bold) {
+    return text(this, s, size, color, bold);
+  }
+
+  private View iconButton(String name, int color, String description, Runnable action) {
+    FrameLayout f = new FrameLayout(this);
+    f.setContentDescription(description);
+    f.setFocusable(true);
+    f.addView(new Icon(this, name, color), fp(20, 20, Gravity.CENTER, 0, 0, 0, 0));
+    f.setOnClickListener(v -> action.run());
+    return f;
+  }
+
+  private ImageView art(int resource) {
+    ImageView image = new ImageView(this);
+    image.setImageResource(resource);
+    image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+    return image;
+  }
+
+  private int artFor(String category) {
+    switch (category) {
+      case "Food":
+        return R.drawable.category_food;
+      case "Fuel":
+        return R.drawable.category_fuel;
+      case "Business":
+        return R.drawable.category_business;
+      case "Recharge":
+        return R.drawable.category_recharge;
+      case "Transfers":
+        return R.drawable.category_transfers;
+      default:
+        return R.drawable.category_shopping;
+    }
+  }
+
+  private int colorFor(String category) {
+    for (int i = 0; i < categories.length; i++)
+      if (categories[i].equals(category)) return categoryColors[i];
+    return categoryColors[2];
+  }
+
+  private String money(long paise) {
+    NumberFormat nf = NumberFormat.getNumberInstance(new Locale("en", "IN"));
+    nf.setMaximumFractionDigits(paise % 100 == 0 ? 0 : 2);
+    nf.setMinimumFractionDigits(paise % 100 == 0 ? 0 : 2);
+    return "₹ " + nf.format(BigDecimal.valueOf(paise, 2));
+  }
+
+  private String date(long timestamp, String pattern) {
+    return new SimpleDateFormat(pattern, Locale.ENGLISH).format(new Date(timestamp));
+  }
+
+  private boolean included(Transaction t) {
+    return !prefs.getBoolean("exclude_transfer", true) || !t.category.equals("Transfers");
+  }
+
+  private boolean sameMonth(long timestamp, Calendar month) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(timestamp);
+    return c.get(Calendar.YEAR) == month.get(Calendar.YEAR)
+        && c.get(Calendar.MONTH) == month.get(Calendar.MONTH);
+  }
+
+  private void render() {
+    if (isFinishing()) return;
+    root.removeAllViews();
+    if (onboarding < 2) {
+      renderOnboarding();
+      return;
+    }
+    body = new FrameLayout(this);
+    boolean hasNav = !screen.equals("Settings");
+    root.addView(body, fp(-1, -1, Gravity.TOP, 0, 0, 0, hasNav ? 70 : 0));
+    switch (screen) {
+      case "Transactions":
+        transactions();
+        break;
+      case "Categories":
+        categoryScreen();
+        break;
+      case "Reports":
+        reports();
+        break;
+      case "Settings":
+        settings();
+        break;
+      default:
+        home();
+    }
+    if (hasNav) bottomNav();
+  }
+
+  private void renderOnboarding() {
+    boolean welcome = onboarding == 0;
+    FrameLayout canvas = new FrameLayout(this);
+    canvas.setBackground(
+        welcome
+            ? new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+                new int[] {0xfff1faff, 0xfffeffff, 0xffffe9eb})
+            : bg(0xfffffbef, 0, this));
+    root.addView(canvas, fp(-1, -1, Gravity.TOP, 0, 0, 0, 0));
+    LinearLayout page = column(this);
+    pad(page, 22, 0, 22, 10);
+    canvas.addView(page, fp(-1, -1, Gravity.TOP, 0, 0, 0, 0));
+    if (welcome) {
+      space(page, 58);
+      TextView title = label("Track Your\nExpenses", 36, BLACK, true);
+      title.setTypeface(Typeface.create("sans-serif-black", Typeface.NORMAL));
+      title.setLineSpacing(d(-2), 1);
+      add(page, title, -2);
+      TextView auto = label("Automatically", 36, 0xff008cff, true);
+      auto.setTypeface(Typeface.create("sans-serif-black", Typeface.NORMAL));
+      add(page, auto, -2);
+      space(page, 8);
+      add(
+          page,
+          label("We read your bank SMS and\norganize your spending\nfor you.", 17, BLACK, false),
+          -2);
+      FrameLayout illustration = new FrameLayout(this);
+      page.addView(illustration, new LinearLayout.LayoutParams(-1, 0, 1));
+      ImageView mascot = art(R.drawable.mascot_welcome);
+      illustration.addView(mascot, fp(-1, -1, Gravity.BOTTOM | Gravity.LEFT, 0, 85, 48, 4));
+      LinearLayout sms = column(this);
+      pad(sms, 12, 12, 12, 12);
+      sms.setBackground(outline(Color.WHITE, 16, BLACK, this));
+      sms.setRotation(7);
+      TextView smsTitle = label("✉  Bank SMS", 14, BLACK, true);
+      add(sms, smsTitle, -2);
+      space(sms, 6);
+      add(sms, label("Your a/c XXXX5083\nis debited Rs 328.00\nto SWIGGY", 12, MUTED, false), -2);
+      illustration.addView(sms, fp(205, -2, Gravity.TOP | Gravity.RIGHT, 0, 10, 5, 0));
+      LinearLayout added = column(this);
+      pad(added, 12, 10, 12, 10);
+      added.setBackground(outline(0xfffffbfc, 16, BLACK, this));
+      added.setRotation(-5);
+      add(added, label("☑  Automatically\n     Added", 12, BLACK, false), -2);
+      space(added, 10);
+      add(added, label("🍴 Swiggy", 14, 0xfffa7a00, true), -2);
+      add(added, label("     ₹328", 17, BLACK, true), -2);
+      illustration.addView(
+          added, fp(140, -2, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 0, 50, 0, 0));
+      add(
+          page,
+          button(
+              this,
+              "Get Started",
+              BLUE,
+              Color.WHITE,
+              true,
+              () -> {
+                onboarding = 1;
+                render();
+              }),
+          52);
+      space(page, 16);
+    } else {
+      ImageView mascot = art(R.drawable.mascot_sms);
+      LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(-1, 0, 1);
+      ap.topMargin = d(32);
+      ap.bottomMargin = d(20);
+      page.addView(mascot, ap);
+      TextView title = label("Allow SMS Access", 25, BLACK, true);
+      title.setGravity(Gravity.CENTER);
+      add(page, title, -2);
+      space(page, 8);
+      TextView intro =
+          label(
+              "We need permission to read your bank\nSMS to automatically track\nyour expenses.",
+              17,
+              MUTED,
+              false);
+      intro.setGravity(Gravity.CENTER);
+      add(page, intro, -2);
+      space(page, 24);
+      benefit(page, "lock", "100% Private", "Data stays only on your device");
+      space(page, 12);
+      benefit(page, "bank", "Supports all major banks", "KVB, AXIS, SBI, HDFC, ICICI & more");
+      space(page, 12);
+      benefit(page, "wifi", "Works offline", "Everything is offline & secure");
+      space(page, 24);
+      add(
+          page,
+          button(this, "Allow SMS ACCESS", BLUE, Color.WHITE, true, () -> requestSms(true)),
+          52);
+      space(page, 8);
+      TextView skip = label("Continue without SMS", 12, MUTED, false);
+      skip.setGravity(Gravity.CENTER);
+      skip.setOnClickListener(v -> finishOnboarding());
+      add(page, skip, 32);
+      TextView privacy = label("Your data never leaves your phone", 12, MUTED, false);
+      privacy.setGravity(Gravity.CENTER);
+      add(page, privacy, 24);
+    }
+  }
+
+  private void benefit(LinearLayout page, String icon, String title, String subtitle) {
+    LinearLayout row = row(this);
+    pad(row, 12, 8, 12, 8);
+    row.setBackground(bg(0xffe2f4e5, 16, this));
+    FrameLayout badge = new FrameLayout(this);
+    badge.setBackground(bg(GREEN, 30, this));
+    badge.addView(new Icon(this, icon, Color.WHITE), fp(20, 20, Gravity.CENTER, 0, 0, 0, 0));
+    row.addView(badge, lp(36, 36));
+    LinearLayout copy = column(this);
+    pad(copy, 14, 0, 0, 0);
+    add(copy, label(title, 14, BLACK, true), -2);
+    space(copy, 3);
+    add(copy, label(subtitle, 12, MUTED, false), -2);
+    row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+    add(page, row, 58);
+  }
+
+  private void finishOnboarding() {
+    prefs.edit().putBoolean("onboarded", true).apply();
+    onboarding = 2;
+    render();
+  }
+
+  private void requestSms(boolean onboard) {
+    if (checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+        && checkSelfPermission(Manifest.permission.RECEIVE_SMS)
+            == PackageManager.PERMISSION_GRANTED) {
+      prefs.edit().putBoolean("sms", true).apply();
+      if (onboard) finishOnboarding();
+      else render();
+      scanSms();
+      return;
+    }
+    new AlertDialog.Builder(this)
+        .setTitle("Automatically track bank payments")
+        .setMessage(
+            "Pockie reads bank transaction messages on this phone to create income and expense"
+                + " records. Messages stay on your device. You can turn this off in Settings, or"
+                + " continue with manual entry.")
+        .setPositiveButton(
+            "Allow access",
+            (dialog, which) ->
+                requestPermissions(
+                    new String[] {Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS},
+                    onboard ? 101 : 102))
+        .setNegativeButton(
+            "Not now",
+            (dialog, which) -> {
+              if (onboard) finishOnboarding();
+              else render();
+            })
+        .show();
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
+    super.onRequestPermissionsResult(request, permissions, results);
+    if (request == 101 || request == 102) {
+      boolean granted =
+          checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED;
+      boolean receive =
+          checkSelfPermission(Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED;
+      prefs.edit().putBoolean("sms", granted && receive).apply();
+      if (request == 101) finishOnboarding();
+      else render();
+      if (granted) scanSms();
+      else toast("SMS access is off. You can still add expenses manually.");
+    }
+  }
+
+  private void bottomNav() {
+    FrameLayout holder = new FrameLayout(this);
+    holder.setBackgroundColor(Color.WHITE);
+    holder.setElevation(d(9));
+    root.addView(holder, fp(-1, 70, Gravity.BOTTOM, 0, 0, 0, 0));
+    navigation = row(this);
+    pad(navigation, 0, 9, 0, 2);
+    holder.addView(navigation, fp(-1, -1, Gravity.TOP, 0, 0, 0, 0));
+    String[] names = {"Home", "Transactions", "", "Reports", "Categories"};
+    String[] icons = {"home", "transactions", "", "reports", "grid"};
+    for (int i = 0; i < 5; i++) {
+      final String name = names[i];
+      LinearLayout item = column(this);
+      item.setGravity(Gravity.CENTER);
+      if (i != 2) {
+        int tint = screen.equals(name) ? BLACK : 0xffbfbfbf;
+        item.addView(new Icon(this, icons[i], tint), lp(20, 20));
+        space(item, 6);
+        TextView t = label(name, 11, tint, screen.equals(name));
+        t.setGravity(Gravity.CENTER);
+        item.addView(t);
+        item.setOnClickListener(v -> go(name));
+        item.setContentDescription(name);
+        item.setFocusable(true);
+      }
+      navigation.addView(item, new LinearLayout.LayoutParams(0, -1, 1));
+    }
+    FrameLayout fab = new FrameLayout(this);
+    fab.setBackground(gradient(0xff000000, 0xff303030, 50, this));
+    fab.addView(new Icon(this, "plus", Color.WHITE), fp(27, 27, Gravity.CENTER, 0, 0, 0, 0));
+    fab.setContentDescription("Add expense or income");
+    fab.setFocusable(true);
+    fab.setElevation(d(12));
+    root.addView(fab, fp(56, 56, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 42));
+    fab.setOnClickListener(v -> addChooser());
+  }
+
+  private ScrollView scroll(LinearLayout content) {
+    ScrollView s = new ScrollView(this);
+    s.setFillViewport(true);
+    s.setClipToPadding(false);
+    s.setVerticalScrollBarEnabled(false);
+    s.addView(content);
+    return s;
+  }
+
+  private LinearLayout page(String title, boolean search) {
+    LinearLayout p = column(this);
+    LinearLayout toolbar = row(this);
+    View back = iconButton("back", 0xff25282c, "Back", () -> go("Home"));
+    toolbar.addView(back, lp(44, 54));
+    TextView heading = label(title, 17, BLACK, true);
+    heading.setGravity(Gravity.CENTER);
+    toolbar.addView(heading, new LinearLayout.LayoutParams(0, -1, 1));
+    toolbar.addView(
+        search
+            ? iconButton("search", BLACK, "Search transactions", () -> searchDialog())
+            : new View(this),
+        lp(44, 54));
+    add(p, toolbar, 64);
+    body.addView(p, fp(-1, -1, Gravity.TOP, 0, 0, 0, 0));
+    return p;
+  }
+
+  private void home() {
+    body.setBackgroundColor(CYAN);
+    LinearLayout content = column(this);
+    ScrollView scroll = scroll(content);
+    body.addView(scroll, fp(-1, -1, Gravity.TOP, 0, 0, 0, 0));
+    FrameLayout hero = new FrameLayout(this);
+    add(content, hero, 350);
+    hero.addView(
+        iconButton("grid", 0xff2b3e4b, "Open settings", () -> go("Settings")),
+        fp(44, 44, Gravity.TOP | Gravity.LEFT, 8, 9, 0, 0));
+    hero.addView(
+        iconButton("bell", 0xff2b3e4b, "Tracking status", () -> trackingStatus()),
+        fp(44, 44, Gravity.TOP | Gravity.RIGHT, 0, 9, 8, 0));
+    LinearLayout greeting = column(this);
+    TextView hey = label("Hey there!", 17, BLACK, true);
+    hey.setRotation(-5);
+    add(greeting, hey, -2);
+    TextView brand = label("I'm Pocki", 26, BLACK, true);
+    brand.setTypeface(Typeface.create("casual", Typeface.BOLD));
+    brand.setRotation(-4);
+    add(greeting, brand, -2);
+    space(greeting, 4);
+    add(greeting, label("Let’s track your expense\ntoday", 10, 0xff607c8a, false), -2);
+    hero.addView(greeting, fp(162, -2, Gravity.LEFT | Gravity.TOP, 22, 58, 0, 0));
+    hero.addView(
+        art(R.drawable.mascot_home), fp(190, 160, Gravity.RIGHT | Gravity.TOP, 0, 36, 16, 0));
+    long income = 0, expense = 0;
+    Calendar month = Calendar.getInstance();
+    List<Transaction> all = store.all();
+    boolean demo = !all.isEmpty() && all.stream().allMatch(t -> t.demo);
+    if (demo) month.setTimeInMillis(all.get(0).date);
+    for (Transaction t : all)
+      if (sameMonth(t.date, month) && included(t)) {
+        if (t.income) income += t.amountPaise;
+        else expense += t.amountPaise;
+      }
+    LinearLayout spending = column(this);
+    pad(spending, 17, 10, 16, 8);
+    spending.setBackground(gradient(0xffffe775, 0xffffdf67, 19, this));
+    TextView spendingTitle = label("Total Spending", 15, BLACK, true);
+    spendingTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+    add(spending, spendingTitle, -2);
+    space(spending, 4);
+    TextView spendingMonth =
+        label(demo ? "October · Sample data" : "This Month", 14, 0xff786d42, false);
+    spendingMonth.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+    add(spending, spendingMonth, -2);
+    space(spending, 8);
+    TextView spendingAmount = label(money(expense), 30, BLACK, true);
+    spendingAmount.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+    add(spending, spendingAmount, -2);
+    hero.addView(spending, fp(-1, 104, Gravity.TOP, 16, 154, 16, 0));
+    LinearLayout stats = row(this);
+    String[] values = {
+      money(income), money(expense / Math.max(1, month.get(Calendar.DAY_OF_MONTH))), money(expense)
+    };
+    String[] captions = {"Income", "Avg / day", "Expense"};
+    int[] colors = {GREEN, 0xff777777, RED};
+    for (int i = 0; i < 3; i++) {
+      LinearLayout card = column(this);
+      card.setGravity(Gravity.CENTER);
+      card.setBackground(bg(0xffeafaff, 13, this));
+      TextView value = label(values[i], 16, BLACK, true);
+      value.setGravity(Gravity.CENTER);
+      value.setMaxLines(1);
+      value.setAutoSizeTextTypeUniformWithConfiguration(
+          10, 16, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
+      add(card, value, 24);
+      TextView cap = label(captions[i], 12, colors[i], false);
+      cap.setGravity(Gravity.CENTER);
+      add(card, cap, 18);
+      LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, d(63), 1);
+      if (i < 2) cp.rightMargin = d(12);
+      stats.addView(card, cp);
+    }
+    hero.addView(stats, fp(-1, 63, Gravity.TOP, 16, 272, 16, 0));
+    LinearLayout recent = column(this);
+    recent.setMinimumHeight(
+        Math.max(d(200), getResources().getDisplayMetrics().heightPixels - d(420)));
+    pad(recent, 17, 18, 17, 22);
+    recent.setBackground(top(Color.WHITE, 34, this));
+    LinearLayout title = row(this);
+    title.addView(
+        label("Recent Expense", 17, BLACK, true), new LinearLayout.LayoutParams(0, d(35), 1));
+    TextView see = label("See All", 12, BLUE, true);
+    see.setGravity(Gravity.CENTER);
+    see.setPadding(d(12), 0, 0, 0);
+    title.addView(see, lp(65, 40));
+    see.setOnClickListener(v -> go("Transactions"));
+    add(recent, title, 40);
+    if (all.isEmpty())
+      empty(
+          recent,
+          "Your money, beautifully organized",
+          "Add your first expense or scan your bank SMS.",
+          true);
+    else {
+      for (int i = 0; i < Math.min(8, all.size()); i++)
+        add(recent, transactionRow(all.get(i), false), 61);
+      if (demo) {
+        TextView clear = label("Sample data · Clear to start tracking", 12, MUTED, false);
+        clear.setGravity(Gravity.CENTER);
+        add(recent, clear, 40);
+        clear.setOnClickListener(v -> clearDemo());
+      }
+    }
+    add(content, recent, -2);
+  }
+
+  private void empty(LinearLayout parent, String title, String message, boolean demo) {
+    space(parent, 24);
+    TextView h = label(title, 17, BLACK, true);
+    h.setGravity(Gravity.CENTER);
+    add(parent, h, -2);
+    space(parent, 8);
+    TextView sub = label(message, 14, MUTED, false);
+    sub.setGravity(Gravity.CENTER);
+    add(parent, sub, -2);
+    space(parent, 20);
+    if (demo) {
+      TextView b =
+          button(
+              this,
+              "Preview with sample data",
+              BLUE,
+              Color.WHITE,
+              false,
+              () -> {
+                store.loadDemo();
+                render();
+              });
+      add(parent, b, 46);
+    } else {
+      TextView b = button(this, "Add a transaction", BLACK, Color.WHITE, false, () -> addChooser());
+      add(parent, b, 46);
+    }
+    space(parent, 20);
+  }
+
+  private View transactionRow(Transaction t, boolean signed) {
+    return transactionRow(t, signed, false);
+  }
+
+  private View transactionRow(Transaction t, boolean signed, boolean detail) {
+    LinearLayout row = row(this);
+    pad(row, 0, 7, 0, 7);
+    String icon =
+        t.category.equals("Food")
+            ? "food"
+            : t.category.equals("Transfers")
+                ? "person"
+                : t.merchant.toLowerCase(Locale.ROOT).contains("godaddy") ? "cart" : "shop";
+    int c =
+        t.category.equals("Food")
+            ? 0xffff7a00
+            : t.category.equals("Transfers")
+                ? (t.merchant.startsWith("Sarath") ? 0xffffad30 : 0xff35b768)
+                : t.merchant.toLowerCase(Locale.ROOT).contains("godaddy") ? BLUE : 0xff8040ff;
+    FrameLayout badge = new FrameLayout(this);
+    badge.setBackground(bg(c, 16, this));
+    badge.addView(new Icon(this, icon, Color.WHITE), fp(21, 23, Gravity.CENTER, 0, 0, 0, 0));
+    row.addView(badge, lp(39, 39));
+    LinearLayout copy = column(this);
+    pad(copy, 11, 0, 5, 0);
+    TextView name = label(t.merchant, 14, BLACK, true);
+    name.setSingleLine(true);
+    name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    add(copy, name, -2);
+    space(copy, 4);
+    TextView sub =
+        label(
+            detail
+                ? date(t.date, "dd MMM yyyy, hh:mm a")
+                : signed
+                    ? (t.source.equals("SMS") || t.source.equals("Notification") || t.demo
+                        ? "UPI • " + (t.reference.isEmpty() ? t.account : t.reference)
+                        : t.source + " • " + t.category)
+                    : date(t.date, "dd MMM yyyy"),
+            12,
+            0xff37484b,
+            false);
+    sub.setSingleLine(true);
+    sub.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    add(copy, sub, -2);
+    row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+    TextView amount =
+        label(
+            (signed ? (t.income ? "+ " : "- ") : "") + money(t.amountPaise),
+            14,
+            signed ? (t.income ? GREEN : RED) : BLACK,
+            true);
+    row.addView(amount, lp(-2, -2));
+    if (!detail) row.setOnClickListener(v -> details(t));
+    row.setContentDescription(
+        t.merchant + ", " + (t.income ? "income " : "expense ") + money(t.amountPaise));
+    row.setFocusable(true);
+    return row;
+  }
+
+  private void transactions() {
+    LinearLayout p =
+        page(categoryFilter.isEmpty() ? "Transactions" : categoryFilter + " Transactions", true);
+    LinearLayout content = column(this);
+    pad(content, 18, 0, 18, 20);
+    add(p, content, -2);
+    if (!categoryFilter.isEmpty()) {
+      TextView chip = label("Category: " + categoryFilter + "   ×", 12, BLUE, false);
+      pad(chip, 10, 7, 10, 7);
+      chip.setBackground(outline(0xffeaf5ff, 20, 0xffc7dfff, this));
+      chip.setOnClickListener(
+          v -> {
+            categoryFilter = "";
+            render();
+          });
+      content.addView(chip, lp(-2, 32));
+      space(content, 14);
+    }
+    if (!query.isEmpty()) {
+      TextView searched = label("Search: " + query + "   ×", 13, MUTED, false);
+      searched.setOnClickListener(
+          v -> {
+            query = "";
+            render();
+          });
+      add(content, searched, 32);
+    }
+    LinearLayout tabs = row(this);
+    String[] filters = {"All", "Expense", "Income"};
+    for (int i = 0; i < 3; i++) {
+      String name = filters[i];
+      TextView b = label(name, 15, filter.equals(name) ? Color.WHITE : 0xffb7b7b7, true);
+      b.setGravity(Gravity.CENTER);
+      b.setBackground(
+          filter.equals(name) ? bg(BLACK, 24, this) : outline(Color.WHITE, 24, 0xffd4d4d4, this));
+      LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(0, d(40), 1);
+      if (i < 2) bp.rightMargin = d(16);
+      tabs.addView(b, bp);
+      b.setOnClickListener(
+          v -> {
+            filter = name;
+            render();
+          });
+    }
+    add(content, tabs, 40);
+    space(content, 18);
+    LinearLayout list = column(this);
+    pad(list, 18, 0, 18, 16);
+    ScrollView sc = scroll(list);
+    p.addView(sc, new LinearLayout.LayoutParams(-1, 0, 1));
+    String lastDate = "";
+    int count = 0;
+    for (Transaction t : store.all()) {
+      if ((filter.equals("Expense") && t.income)
+          || (filter.equals("Income") && !t.income)
+          || (!categoryFilter.isEmpty() && !categoryFilter.equals(t.category))) continue;
+      if (!query.isEmpty()
+          && !(t.merchant + " " + t.reference + " " + t.category + " " + t.account + " " + t.notes)
+              .toLowerCase(Locale.ROOT)
+              .contains(query.toLowerCase(Locale.ROOT))) continue;
+      String group = date(t.date, "dd MMMM yyyy");
+      if (!group.equals(lastDate)) {
+        if (count > 0) space(list, 18);
+        TextView day = label(group, 15, 0xff5b5c69, true);
+        add(list, day, 40);
+        lastDate = group;
+      }
+      add(list, transactionRow(t, true), 61);
+      count++;
+    }
+    if (count == 0)
+      empty(
+          list,
+          "No transactions found",
+          query.isEmpty()
+              ? "Your transactions will appear here."
+              : "Try a different merchant, category, or reference.",
+          false);
+  }
+
+  private void searchDialog() {
+    EditText input = new EditText(this);
+    input.setSingleLine();
+    input.setHint("Merchant, category or reference");
+    input.setText(query);
+    pad(input, 24, 16, 24, 16);
+    AlertDialog dialog =
+        new AlertDialog.Builder(this)
+            .setTitle("Search transactions")
+            .setView(input)
+            .setPositiveButton(
+                "Search",
+                (v, w) -> {
+                  query = input.getText().toString().trim();
+                  screen = "Transactions";
+                  render();
+                })
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton(
+                "Clear",
+                (v, w) -> {
+                  query = "";
+                  render();
+                })
+            .create();
+    dialog.getWindow();
+    dialog.setOnShowListener(
+        v -> {
+          input.requestFocus();
+          dialog
+              .getWindow()
+              .setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        });
+    dialog.show();
+  }
+
+  private void categoryScreen() {
+    LinearLayout p = page("Categories", false);
+    LinearLayout grid = column(this);
+    pad(grid, 18, 22, 18, 28);
+    List<Transaction> all = store.all();
+    for (int r = 0; r < 3; r++) {
+      LinearLayout row = row(this);
+      for (int c = 0; c < 2; c++) {
+        String name = categories[r * 2 + c];
+        LinearLayout card = column(this);
+        pad(card, 12, 12, 12, 10);
+        card.setBackground(bg(colorFor(name), 10, this));
+        ImageView image = art(artFor(name));
+        add(card, image, 76);
+        space(card, 6);
+        LinearLayout title = row(this);
+        title.addView(label(name, 15, BLACK, true), new LinearLayout.LayoutParams(0, -2, 1));
+        title.addView(new Icon(this, "next", BLACK), lp(14, 14));
+        add(card, title, 24);
+        long total = 0;
+        int count = 0;
+        for (Transaction t : all)
+          if (t.category.equals(name)) {
+            if (!t.income) total += t.amountPaise;
+            count++;
+          }
+        LinearLayout summary = row(this);
+        summary.addView(
+            label(money(total), 12, MUTED, false), new LinearLayout.LayoutParams(0, -2, 1));
+        summary.addView(label("(" + count + ")", 12, MUTED, false));
+        add(card, summary, 18);
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, d(152), 1);
+        if (c == 0) cp.rightMargin = d(16);
+        row.addView(card, cp);
+        card.setOnClickListener(
+            v -> {
+              screen = "Transactions";
+              categoryFilter = name;
+              filter = "All";
+              query = "";
+              render();
+            });
+        card.setContentDescription(name + ", " + count + " transactions");
+        card.setFocusable(true);
+      }
+      add(grid, row, 152);
+      space(grid, 16);
+    }
+    add(p, scroll(grid), -1);
+  }
+
+  private BottomSheetDialog sheet(String title, String subtitle, LinearLayout[] out) {
+    BottomSheetDialog dialog = new BottomSheetDialog(this);
+    LinearLayout outer = column(this);
+    pad(outer, 18, 14, 18, 18);
+    View handle = new View(this);
+    handle.setBackground(bg(0xffd8d8d8, 4, this));
+    LinearLayout.LayoutParams hp = lp(44, 4);
+    hp.gravity = Gravity.CENTER_HORIZONTAL;
+    hp.bottomMargin = d(24);
+    outer.addView(handle, hp);
+    LinearLayout heading = row(this);
+    heading.addView(label(title, 20, BLACK, true), new LinearLayout.LayoutParams(0, -2, 1));
+    heading.addView(iconButton("close", 0xff303943, "Close", dialog::dismiss), lp(26, 26));
+    add(outer, heading, 30);
+    TextView sub = label(subtitle, 14, 0xff45565b, false);
+    add(outer, sub, -2);
+    space(outer, 16);
+    LinearLayout contents = column(this);
+    outer.addView(contents);
+    ScrollView scroll = scroll(outer);
+    scroll.setFillViewport(false);
+    dialog.setContentView(scroll);
+    dialog.getBehavior().setSkipCollapsed(true);
+    dialog.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
+    dialog.setOnShowListener(
+        x -> {
+          if (dialog.getWindow() != null) {
+            dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            if (Build.VERSION.SDK_INT >= 28) {
+              WindowManager.LayoutParams a = dialog.getWindow().getAttributes();
+              a.layoutInDisplayCutoutMode =
+                  WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+              dialog.getWindow().setAttributes(a);
+            }
+          }
+          FrameLayout bottom =
+              dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+          if (bottom != null) {
+            bottom.setBackground(top(Color.WHITE, 28, this));
+            bottom.setClipToOutline(true);
+            bottom.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
+          }
+          dialog
+              .getBehavior()
+              .setMaxHeight(getResources().getDisplayMetrics().heightPixels - d(36));
+        });
+    if (dialog.getWindow() != null)
+      dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+    out[0] = contents;
+    return dialog;
+  }
+
+  private void addChooser() {
+    LinearLayout[] out = new LinearLayout[1];
+    BottomSheetDialog dialog =
+        sheet("Add or track expense", "Choose a quick way to add your income or\nexpense", out);
+    LinearLayout p = out[0];
+    choice(
+        p,
+        "mail",
+        "Scan SMS",
+        "Automatically read SMS and create\nincome or expense",
+        0xfffff2e6,
+        0xffff7900,
+        () -> {
+          dialog.dismiss();
+          scanSms();
+        });
+    space(p, 12);
+    choice(
+        p,
+        "wallet",
+        "Add Expense & Income",
+        "Manually add your income or\nexpense entry",
+        0xffe6f6ed,
+        0xff30bb6b,
+        () -> {
+          dialog.dismiss();
+          editor(null, null);
+        });
+    space(p, 12);
+    choice(
+        p,
+        "scan",
+        "Scan Receipts",
+        "Take a photo of your bills and\ncreate an expense",
+        0xfff1eafd,
+        0xff9c52ff,
+        () -> {
+          dialog.dismiss();
+          receiptOptions();
+        });
+    dialog.show();
+  }
+
+  private void choice(
+      LinearLayout p,
+      String icon,
+      String title,
+      String sub,
+      int background,
+      int accent,
+      Runnable action) {
+    LinearLayout row = row(this);
+    pad(row, 11, 10, 10, 10);
+    row.setBackground(bg(background, 15, this));
+    FrameLayout badge = new FrameLayout(this);
+    badge.setBackground(bg((accent & 0xffffff) | 0x18000000, 10, this));
+    badge.addView(new Icon(this, icon, accent), fp(24, 24, Gravity.CENTER, 0, 0, 0, 0));
+    row.addView(badge, lp(40, 40));
+    LinearLayout copy = column(this);
+    pad(copy, 11, 0, 2, 0);
+    add(copy, label(title, 16, BLACK, true), -2);
+    space(copy, 3);
+    add(copy, label(sub, 12, 0xff596b93, false), -2);
+    row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+    row.addView(new Icon(this, "next", accent), lp(23, 23));
+    add(p, row, 76);
+    row.setOnClickListener(v -> action.run());
+    row.setFocusable(true);
+    row.setContentDescription(title);
+  }
+
+  private void details(Transaction t) {
+    LinearLayout[] out = new LinearLayout[1];
+    BottomSheetDialog dialog =
+        sheet("Transaction Details", "Choose a quick way to add your income or\nexpense", out);
+    LinearLayout p = out[0];
+    add(p, transactionRow(t, true, true), 64);
+    space(p, 14);
+    View line = new View(this);
+    line.setBackgroundColor(0xffd6d7dd);
+    add(p, line, 1);
+    space(p, 18);
+    detailLine(
+        p,
+        "Type",
+        t.income ? "Income" : "Expense",
+        t.income ? GREEN : RED,
+        t.income ? 0xffddf8e8 : 0xffffe2e4);
+    detailLine(p, "Category", t.category, BLACK, colorFor(t.category));
+    detailLine(p, "Account", t.account.isEmpty() ? "Cash / not specified" : t.account, BLACK, 0);
+    detailLine(
+        p, "Reference No", t.reference.isEmpty() ? t.source + "/" + t.id : t.reference, BLACK, 0);
+    if (!t.notes.isEmpty()) detailLine(p, "Notes", t.notes, BLACK, 0);
+    space(p, 22);
+    LinearLayout buttons = row(this);
+    TextView edit = button(this, "✎  Edit", Color.WHITE, BLUE, false, () -> editor(t, dialog));
+    edit.setBackground(outline(Color.WHITE, 12, BLUE, this));
+    TextView delete =
+        button(
+            this,
+            "▣  Delete",
+            0xffffdfe2,
+            RED,
+            false,
+            () ->
+                new AlertDialog.Builder(this)
+                    .setTitle("Delete " + (t.income ? "Income" : "Expense"))
+                    .setMessage(
+                        "Are you sure you want to delete this "
+                            + (t.income ? "income" : "expense")
+                            + " record?")
+                    .setNegativeButton("CANCEL", null)
+                    .setPositiveButton(
+                        "DELETE",
+                        (v, w) -> {
+                          store.delete(t.id);
+                          dialog.dismiss();
+                          render();
+                        })
+                    .show());
+    LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(0, d(46), 1);
+    bp.rightMargin = d(12);
+    buttons.addView(edit, bp);
+    buttons.addView(delete, new LinearLayout.LayoutParams(0, d(46), 1));
+    add(p, buttons, 46);
+    dialog.show();
+  }
+
+  private void detailLine(LinearLayout p, String name, String value, int color, int background) {
+    LinearLayout row = row(this);
+    pad(row, 8, 5, 0, 5);
+    row.addView(label(name, 13, 0xff656181, false), new LinearLayout.LayoutParams(0, -2, 1));
+    TextView val = label(value, 13, color, false);
+    val.setGravity(Gravity.RIGHT);
+    val.setMaxWidth(d(225));
+    if (background != 0) {
+      pad(val, 10, 5, 10, 5);
+      val.setBackground(bg(background, 20, this));
+    }
+    row.addView(val);
+    add(p, row, -2);
+    space(p, 10);
+  }
+
+  private EditText field(
+      LinearLayout parent, String icon, String hint, String value, int height, int inputType) {
+    LinearLayout row = row(this);
+    pad(row, 13, 0, 10, 0);
+    row.setBackground(bg(FIELD, 12, this));
+    row.addView(new Icon(this, icon, 0xff666886), lp(20, 20));
+    EditText input = new EditText(this);
+    input.setBackgroundColor(Color.TRANSPARENT);
+    input.setTextSize(14);
+    input.setTextColor(BLACK);
+    input.setHintTextColor(0xffa6a8ae);
+    input.setHint(hint);
+    input.setText(value);
+    input.setInputType(inputType);
+    input.setPadding(d(12), d(10), 0, d(10));
+    if (height < 60) input.setSingleLine(true);
+    else input.setGravity(Gravity.TOP);
+    row.addView(input, new LinearLayout.LayoutParams(0, -1, 1));
+    add(parent, row, height);
+    input.setContentDescription(hint);
+    return input;
+  }
+
+  private void editor(Transaction original, BottomSheetDialog details) {
+    boolean editing = original != null && original.id > 0;
+    Transaction t = original == null ? new Transaction() : original.copy();
+    LinearLayout[] out = new LinearLayout[1];
+    BottomSheetDialog dialog =
+        sheet(
+            editing ? "Edit " + (t.income ? "Income" : "Expense") : "Add Expense & Income",
+            "Choose a quick way to add your income or\nexpense",
+            out);
+    LinearLayout p = out[0];
+    if (!editing) {
+      LinearLayout toggle = row(this);
+      toggle.setBackground(bg(FIELD, 30, this));
+      TextView expense = label("Expense", 15, BLACK, true),
+          income = label("Income", 15, BLACK, true);
+      expense.setGravity(Gravity.CENTER);
+      income.setGravity(Gravity.CENTER);
+      toggle.addView(expense, new LinearLayout.LayoutParams(0, d(44), 1));
+      toggle.addView(income, new LinearLayout.LayoutParams(0, d(44), 1));
+      Runnable paint =
+          () -> {
+            expense.setBackground(t.income ? null : bg(BLUE, 30, this));
+            expense.setTextColor(t.income ? BLACK : Color.WHITE);
+            income.setBackground(t.income ? bg(BLUE, 30, this) : null);
+            income.setTextColor(t.income ? Color.WHITE : BLACK);
+          };
+      expense.setOnClickListener(
+          v -> {
+            t.income = false;
+            paint.run();
+          });
+      income.setOnClickListener(
+          v -> {
+            t.income = true;
+            paint.run();
+          });
+      paint.run();
+      add(p, toggle, 44);
+      space(p, 20);
+    }
+    EditText merchant =
+        field(
+            p,
+            "shop",
+            "Merchant / Payee (e.g. Swiggy)",
+            t.merchant,
+            46,
+            android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+    space(p, 11);
+    LinearLayout amountDate = row(this);
+    LinearLayout amountWrap = column(this);
+    LinearLayout dateWrap = column(this);
+    LinearLayout.LayoutParams half = new LinearLayout.LayoutParams(0, -2, 1);
+    half.rightMargin = d(11);
+    amountDate.addView(amountWrap, half);
+    amountDate.addView(dateWrap, new LinearLayout.LayoutParams(0, -2, 1));
+    EditText amount =
+        field(
+            amountWrap,
+            "rupee",
+            "Amount",
+            t.amountPaise == 0
+                ? ""
+                : BigDecimal.valueOf(t.amountPaise, 2).stripTrailingZeros().toPlainString(),
+            46,
+            android.text.InputType.TYPE_CLASS_NUMBER
+                | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    LinearLayout dateRow = row(this);
+    pad(dateRow, 12, 0, 6, 0);
+    dateRow.setBackground(bg(FIELD, 12, this));
+    dateRow.addView(new Icon(this, "calendar", 0xff666886), lp(20, 20));
+    TextView selectedDate =
+        label(
+            t.date > 0 ? date(t.date, "dd MMM yyyy") : "Date",
+            13,
+            t.date > 0 ? BLACK : 0xffa6a8ae,
+            true);
+    pad(selectedDate, 10, 0, 0, 0);
+    dateRow.addView(selectedDate, new LinearLayout.LayoutParams(0, -2, 1));
+    add(dateWrap, dateRow, 46);
+    dateRow.setContentDescription("Transaction date");
+    dateRow.setOnClickListener(
+        v -> {
+          Calendar cal = Calendar.getInstance();
+          cal.setTimeInMillis(t.date > 0 ? t.date : System.currentTimeMillis());
+          new DatePickerDialog(
+                  this,
+                  (view, y, m, day) -> {
+                    Calendar pick = Calendar.getInstance();
+                    pick.setTimeInMillis(t.date > 0 ? t.date : System.currentTimeMillis());
+                    pick.set(y, m, day);
+                    t.date = pick.getTimeInMillis();
+                    selectedDate.setText(date(t.date, "dd MMM yyyy"));
+                    selectedDate.setTextColor(BLACK);
+                  },
+                  cal.get(Calendar.YEAR),
+                  cal.get(Calendar.MONTH),
+                  cal.get(Calendar.DAY_OF_MONTH))
+              .show();
+        });
+    add(p, amountDate, -2);
+    space(p, 11);
+    LinearLayout cat = row(this);
+    pad(cat, 13, 0, 12, 0);
+    cat.setBackground(bg(FIELD, 12, this));
+    cat.addView(new Icon(this, "category", 0xff666886), lp(20, 20));
+    TextView selectedCat = label(t.category, 14, BLACK, true);
+    pad(selectedCat, 12, 0, 0, 0);
+    cat.addView(selectedCat, new LinearLayout.LayoutParams(0, -2, 1));
+    cat.addView(new Icon(this, "down", BLACK), lp(16, 16));
+    add(p, cat, 46);
+    cat.setOnClickListener(
+        v ->
+            new AlertDialog.Builder(this)
+                .setTitle("Choose category")
+                .setItems(
+                    categories,
+                    (dd, which) -> {
+                      t.category = categories[which];
+                      selectedCat.setText(t.category);
+                    })
+                .show());
+    cat.setContentDescription("Choose category");
+    space(p, 11);
+    EditText account = null, reference = null;
+    if (editing) {
+      account =
+          field(
+              p,
+              "bank",
+              "Account (optional)",
+              t.account,
+              46,
+              android.text.InputType.TYPE_CLASS_TEXT);
+      space(p, 11);
+    } else {
+      reference =
+          field(
+              p,
+              "notes",
+              "Reference No (optional)",
+              t.reference,
+              46,
+              android.text.InputType.TYPE_CLASS_TEXT);
+      space(p, 11);
+    }
+    EditText notes =
+        field(
+            p,
+            "notes",
+            "Notes (optional)",
+            t.notes,
+            72,
+            android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+    space(p, 16);
+    if (t.source.equals("Receipt")) {
+      TextView hint =
+          label(
+              t.amountPaise == 0
+                  ? "Couldn’t identify the receipt total. Enter the amount and review the other"
+                      + " fields before saving."
+                  : "Review the scanned merchant, total, and date before saving.",
+              12,
+              MUTED,
+              false);
+      add(p, hint, -2);
+      space(p, 12);
+    }
+    LinearLayout buttons = row(this);
+    TextView cancel = button(this, "Cancel", Color.WHITE, BLACK, false, dialog::dismiss);
+    cancel.setBackground(outline(Color.WHITE, 12, 0xffdce0e8, this));
+    EditText accountField = account;
+    EditText referenceField = reference;
+    TextView save =
+        button(
+            this,
+            "Save",
+            BLACK,
+            Color.WHITE,
+            false,
+            () -> {
+              String name = merchant.getText().toString().trim(),
+                  value = amount.getText().toString().trim();
+              long amountValue = BankParser.paise(value);
+              if (name.isEmpty()) {
+                merchant.setError("Enter a merchant or payee");
+                merchant.requestFocus();
+                return;
+              }
+              if (amountValue <= 0 || amountValue > 999999999999L) {
+                amount.setError("Enter a valid amount with up to 2 decimal places");
+                amount.requestFocus();
+                return;
+              }
+              t.merchant = name;
+              if (t.date <= 0) {
+                toast("Choose the receipt date before saving.");
+                return;
+              }
+              t.amountPaise = amountValue;
+              if (referenceField != null) t.reference = referenceField.getText().toString().trim();
+              t.notes = notes.getText().toString().trim();
+              if (accountField != null) t.account = accountField.getText().toString().trim();
+              if (store.save(t) <= 0) {
+                toast("This transaction already exists.");
+                return;
+              }
+              ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE))
+                  .hideSoftInputFromWindow(saveToken(merchant), 0);
+              dialog.dismiss();
+              if (details != null) {
+                details.dismiss();
+                details(t);
+              }
+              render();
+              toast(editing ? "Transaction updated" : "Transaction saved");
+            });
+    LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(0, d(46), 1);
+    bp.rightMargin = d(12);
+    buttons.addView(cancel, bp);
+    buttons.addView(save, new LinearLayout.LayoutParams(0, d(46), 1));
+    add(p, buttons, 46);
+    dialog.show();
+  }
+
+  private android.os.IBinder saveToken(View v) {
+    return v.getWindowToken();
+  }
+
+  private void settings() {
+    LinearLayout p = page("Settings", false);
+    LinearLayout content = column(this);
+    pad(content, 22, 12, 22, 28);
+    add(p, scroll(content), -1);
+    boolean sms =
+        checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+            && checkSelfPermission(Manifest.permission.RECEIVE_SMS)
+                == PackageManager.PERMISSION_GRANTED
+            && prefs.getBoolean("sms", false);
+    boolean notifications = notificationAccess() && prefs.getBoolean("notifications", false);
+    LinearLayout banner = row(this);
+    pad(banner, 12, 10, 12, 10);
+    banner.setBackground(bg(0xffd0f4ff, 15, this));
+    banner.addView(art(R.drawable.mascot_settings), lp(92, 72));
+    LinearLayout copy = column(this);
+    pad(copy, 14, 0, 0, 0);
+    add(
+        copy,
+        label(sms || notifications ? "All Set 🎉" : "Make tracking automatic", 16, BLACK, true),
+        -2);
+    space(copy, 5);
+    add(
+        copy,
+        label(
+            sms || notifications
+                ? "Your tracking is active"
+                : "Enable access to track\nbank transactions",
+            14,
+            0xff45565b,
+            false),
+        -2);
+    banner.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+    add(content, banner, 92);
+    space(content, 22);
+    settingSwitch(
+        content,
+        "SMS Access",
+        "Automatically reads bank SMS\nto track your expense",
+        sms,
+        enabled -> {
+          if (enabled) requestSms(false);
+          else {
+            prefs.edit().putBoolean("sms", false).apply();
+            render();
+          }
+        },
+        GREEN);
+    settingSwitch(
+        content,
+        "Notification Access",
+        "Automatically reads bank notifications\nto track your expense",
+        notifications,
+        enabled -> {
+          if (enabled) {
+            prefs.edit().putBoolean("notifications", true).apply();
+            startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+          } else {
+            prefs.edit().putBoolean("notifications", false).apply();
+            render();
+          }
+        },
+        GREEN);
+    Set<String> banks = prefs.getStringSet("banks", new HashSet<>());
+    settingLink(
+        content,
+        "Bank Filter",
+        banks.isEmpty() ? "All banks" : String.join(", ", banks),
+        () -> bankFilter());
+    settingSwitch(
+        content,
+        "Exclude Transfer",
+        "Mark internal transfer",
+        prefs.getBoolean("exclude_transfer", true),
+        enabled -> {
+          prefs.edit().putBoolean("exclude_transfer", enabled).apply();
+          render();
+        },
+        BLUE);
+    settingLink(content, "Backup & Export", "Export your data", () -> backupOptions());
+    settingLink(
+        content,
+        "Privacy & Security",
+        "",
+        () ->
+            new AlertDialog.Builder(this)
+                .setTitle("Privacy & Security")
+                .setMessage(
+                    "Your transaction database is stored in Pockie’s private app storage. Pockie"
+                        + " does not upload your messages or transactions. Device backups are"
+                        + " disabled. Receipt text is recognized on your device.\n\n"
+                        + "Only transaction messages are saved; OTPs, failed payments and"
+                        + " promotions are ignored. You control SMS and notification access in"
+                        + " Android Settings. Exported files are saved only where you choose.")
+                .setPositiveButton("Done", null)
+                .show());
+    settingLink(
+        content,
+        "About",
+        "",
+        () ->
+            new AlertDialog.Builder(this)
+                .setTitle("Pockie 1.0.1")
+                .setMessage(
+                    "A little friend for your everyday expenses.\n\n"
+                        + "Built with native Android views and Java. Track income, expenses and"
+                        + " categories, scan receipts, and keep your records offline.")
+                .setPositiveButton("Done", null)
+                .show());
+    if (store.all().stream().anyMatch(t -> t.demo))
+      settingLink(content, "Clear sample data", "Keep your own transactions", () -> clearDemo());
+  }
+
+  private void settingSwitch(
+      LinearLayout content,
+      String title,
+      String subtitle,
+      boolean checked,
+      java.util.function.Consumer<Boolean> action,
+      int accent) {
+    LinearLayout row = row(this);
+    row.setGravity(Gravity.TOP);
+    LinearLayout copy = column(this);
+    space(copy, 8);
+    add(copy, label(title, 14, BLACK, true), -2);
+    space(copy, 4);
+    add(copy, label(subtitle, 12, 0xff45565b, false), -2);
+    row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+    androidx.appcompat.widget.SwitchCompat toggle =
+        new androidx.appcompat.widget.SwitchCompat(this);
+    toggle.setChecked(checked);
+    toggle.setContentDescription(title);
+    toggle.setThumbTintList(ColorStateList.valueOf(Color.WHITE));
+    toggle.setTrackTintList(
+        new ColorStateList(
+            new int[][] {new int[] {android.R.attr.state_checked}, new int[] {}},
+            new int[] {accent, 0xffbfc2c7}));
+    row.addView(toggle, lp(42, 40));
+    toggle.setOnCheckedChangeListener((b, value) -> action.accept(value));
+    add(content, row, 74);
+  }
+
+  private void settingLink(LinearLayout content, String title, String subtitle, Runnable action) {
+    LinearLayout row = row(this);
+    LinearLayout copy = column(this);
+    add(copy, label(title, 14, BLACK, true), -2);
+    if (!subtitle.isEmpty()) {
+      space(copy, 5);
+      add(copy, label(subtitle, 12, 0xff45565b, false), -2);
+    }
+    row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+    row.addView(new Icon(this, "next", 0xff38435c), lp(17, 17));
+    add(content, row, subtitle.isEmpty() ? 48 : 64);
+    row.setOnClickListener(v -> action.run());
+    row.setContentDescription(title);
+    row.setFocusable(true);
+  }
+
+  private boolean notificationAccess() {
+    String enabled =
+        Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
+    return enabled != null && enabled.contains(getPackageName() + "/");
+  }
+
+  private void bankFilter() {
+    String[] banks = {
+      "KVB",
+      "SBI",
+      "HDFC",
+      "ICICI",
+      "AXIS",
+      "KOTAK",
+      "IDFC",
+      "PNB",
+      "BOB",
+      "CANARA",
+      "INDIANBANK",
+      "UNION"
+    };
+    Set<String> chosen = new HashSet<>(prefs.getStringSet("banks", new HashSet<>()));
+    boolean[] selected = new boolean[banks.length];
+    for (int i = 0; i < banks.length; i++) selected[i] = chosen.contains(banks[i]);
+    new AlertDialog.Builder(this)
+        .setTitle("Bank Filter · none selected = all")
+        .setMultiChoiceItems(
+            banks,
+            selected,
+            (dialog, which, on) -> {
+              if (on) chosen.add(banks[which]);
+              else chosen.remove(banks[which]);
+            })
+        .setPositiveButton(
+            "Save",
+            (v, w) -> {
+              prefs.edit().putStringSet("banks", chosen).apply();
+              render();
+            })
+        .setNeutralButton(
+            "All banks",
+            (v, w) -> {
+              prefs.edit().remove("banks").apply();
+              render();
+            })
+        .setNegativeButton("Cancel", null)
+        .show();
+  }
+
+  private void trackingStatus() {
+    boolean active =
+        (prefs.getBoolean("sms", false)
+                && checkSelfPermission(Manifest.permission.READ_SMS)
+                    == PackageManager.PERMISSION_GRANTED)
+            || (prefs.getBoolean("notifications", false) && notificationAccess());
+    new AlertDialog.Builder(this)
+        .setTitle(active ? "Tracking is enabled" : "Track your expenses automatically")
+        .setMessage(
+            "Manage SMS and notification access, choose your banks, and control internal transfers"
+                + " in Settings.")
+        .setPositiveButton("Open Settings", (v, w) -> go("Settings"))
+        .setNegativeButton("Done", null)
+        .show();
+  }
+
+  private void clearDemo() {
+    new AlertDialog.Builder(this)
+        .setTitle("Clear sample data?")
+        .setMessage(
+            "Only the preview transactions will be removed. Your own transactions will stay.")
+        .setNegativeButton("Cancel", null)
+        .setPositiveButton(
+            "Clear samples",
+            (v, w) -> {
+              store.removeDemo();
+              render();
+            })
+        .show();
+  }
+
+  private void scanSms() {
+    if (scanning) return;
+    if (checkSelfPermission(Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+      requestSms(false);
+      return;
+    }
+    scanning = true;
+    ProgressDialog progress =
+        ProgressDialog.show(this, "Scan SMS", "Looking for bank transactions…", true, false);
+    worker.execute(
+        () -> {
+          int found = 0;
+          try (Cursor cursor =
+              getContentResolver()
+                  .query(
+                      Telephony.Sms.Inbox.CONTENT_URI,
+                      new String[] {"address", "body", "date"},
+                      null,
+                      null,
+                      "date DESC")) {
+            if (cursor != null)
+              while (cursor.moveToNext()) {
+                if (Tracking.importMessage(
+                    this, cursor.getString(0), cursor.getString(1), cursor.getLong(2), "SMS"))
+                  found++;
+              }
+            int count = found;
+            runOnUiThread(
+                () -> {
+                  scanning = false;
+                  if (!isFinishing()) {
+                    progress.dismiss();
+                    render();
+                    toast(
+                        count == 0
+                            ? "No new bank transactions found."
+                            : count + " bank transactions added.");
+                  }
+                });
+          } catch (Exception e) {
+            runOnUiThread(
+                () -> {
+                  scanning = false;
+                  if (!isFinishing()) {
+                    progress.dismiss();
+                    toast("Unable to scan SMS. Check SMS access in Android Settings.");
+                  }
+                });
+          }
+        });
+  }
+
+  private void receiptOptions() {
+    new AlertDialog.Builder(this)
+        .setTitle("Scan Receipts")
+        .setItems(
+            new String[] {"Take a photo", "Choose receipt image"},
+            (v, which) -> {
+              if (which == 0) camera();
+              else {
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                i.setType("image/*");
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                startActivityForResult(i, 201);
+              }
+            })
+        .setNegativeButton("Cancel", null)
+        .show();
+  }
+
+  private void camera() {
+    try {
+      File dir = new File(getCacheDir(), "receipts");
+      dir.mkdirs();
+      File photo = File.createTempFile("receipt-", ".jpg", dir);
+      cameraUri = FileProvider.getUriForFile(this, getPackageName() + ".files", photo);
+      Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+      intent.putExtra(MediaStore.EXTRA_OUTPUT, cameraUri);
+      intent.addFlags(
+          Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+      intent.setClipData(ClipData.newRawUri("Receipt photo", cameraUri));
+      startActivityForResult(intent, 202);
+    } catch (Exception e) {
+      toast("No camera app is available. Choose a receipt image instead.");
+    }
+  }
+
+  private void recognize(Uri uri) {
+    ProgressDialog progress =
+        ProgressDialog.show(
+            this, "Scan Receipt", "Reading your receipt on this device…", true, false);
+    ReceiptScanner.scan(this, uri)
+        .addOnSuccessListener(
+            this,
+            draft -> {
+              progress.dismiss();
+              editor(draft, null);
+            })
+        .addOnFailureListener(
+            this,
+            e -> {
+              progress.dismiss();
+              toast(
+                  "Could not read this receipt. Try a clearer image or add the expense manually.");
+            });
+  }
+
+  private void backupOptions() {
+    new AlertDialog.Builder(this)
+        .setTitle("Backup & Export")
+        .setItems(
+            new String[] {"Export CSV spreadsheet", "Save JSON backup", "Restore JSON backup"},
+            (v, which) -> {
+              if (which == 2) {
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                i.setType("*/*");
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                startActivityForResult(i, 302);
+              } else {
+                pendingExport = which == 0 ? "csv" : "json";
+                Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType(which == 0 ? "text/csv" : "application/json");
+                i.putExtra(
+                    Intent.EXTRA_TITLE,
+                    "Pockie-"
+                        + date(System.currentTimeMillis(), "yyyy-MM-dd")
+                        + "."
+                        + pendingExport);
+                startActivityForResult(i, 301);
+              }
+            })
+        .setNegativeButton("Cancel", null)
+        .show();
+  }
+
+  private String backup() throws JSONException {
+    JSONObject root = new JSONObject();
+    root.put("version", 1);
+    JSONArray items = new JSONArray();
+    for (Transaction t : store.all()) {
+      JSONObject o = new JSONObject();
+      o.put("merchant", t.merchant);
+      o.put("amountPaise", t.amountPaise);
+      o.put("date", t.date);
+      o.put("income", t.income);
+      o.put("category", t.category);
+      o.put("account", t.account);
+      o.put("reference", t.reference);
+      o.put("notes", t.notes);
+      o.put("source", t.source);
+      o.put("demo", t.demo);
+      o.put(
+          "fingerprint",
+          t.fingerprint.isEmpty()
+              ? "backup:" + t.date + ":" + t.amountPaise + ":" + t.income + ":" + t.merchant
+              : t.fingerprint);
+      items.put(o);
+    }
+    root.put("transactions", items);
+    return root.toString(2);
+  }
+
+  private void export(Uri uri) {
+    try {
+      String output = pendingExport.equals("csv") ? ExpenseStore.csv(store.all()) : backup();
+      try (OutputStream stream = getContentResolver().openOutputStream(uri, "wt")) {
+        if (stream == null) throw new IOException();
+        stream.write(output.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      }
+      toast("Export saved.");
+    } catch (Exception e) {
+      toast("Unable to save export. Try another location.");
+    }
+  }
+
+  private void restore(Uri uri) {
+    worker.execute(
+        () -> {
+          try (InputStream input = getContentResolver().openInputStream(uri)) {
+            if (input == null) throw new IOException();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            byte[] chunk = new byte[8192];
+            int read;
+            while ((read = input.read(chunk)) != -1) {
+              if (bytes.size() + read > 10 * 1024 * 1024) throw new IOException();
+              bytes.write(chunk, 0, read);
+            }
+            JSONObject root = new JSONObject(bytes.toString("UTF-8"));
+            if (root.getInt("version") != 1) throw new JSONException("Unsupported version");
+            JSONArray rows = root.getJSONArray("transactions");
+            List<Transaction> drafts = new ArrayList<>();
+            for (int i = 0; i < rows.length(); i++) {
+              JSONObject o = rows.getJSONObject(i);
+              Transaction t = new Transaction();
+              t.merchant = o.getString("merchant");
+              t.amountPaise = o.getLong("amountPaise");
+              t.date = o.getLong("date");
+              t.income = o.getBoolean("income");
+              t.category = o.getString("category");
+              t.account = o.optString("account");
+              t.reference = o.optString("reference");
+              t.notes = o.optString("notes");
+              t.source = o.optString("source", "Backup");
+              t.demo = o.optBoolean("demo");
+              t.fingerprint = o.getString("fingerprint");
+              if (t.merchant.trim().isEmpty()
+                  || t.amountPaise <= 0
+                  || t.amountPaise > 999999999999L
+                  || t.date <= 0
+                  || !Arrays.asList(categories).contains(t.category)
+                  || t.fingerprint.isEmpty()) throw new JSONException("Invalid transaction");
+              drafts.add(t);
+            }
+            runOnUiThread(
+                () ->
+                    new AlertDialog.Builder(this)
+                        .setTitle("Restore backup?")
+                        .setMessage(
+                            "Merge "
+                                + drafts.size()
+                                + " transactions with your current records? Existing records are"
+                                + " kept and matching backup records are skipped.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton(
+                            "Restore",
+                            (v, w) -> {
+                              int added = 0;
+                              android.database.sqlite.SQLiteDatabase db =
+                                  store.getWritableDatabase();
+                              db.beginTransaction();
+                              try {
+                                for (Transaction t : drafts) if (store.save(t) > 0) added++;
+                                db.setTransactionSuccessful();
+                              } finally {
+                                db.endTransaction();
+                              }
+                              render();
+                              toast(added + " transactions restored.");
+                            })
+                        .show());
+          } catch (Exception e) {
+            runOnUiThread(
+                () -> toast("This is not a valid Pockie backup. No records were changed."));
+          }
+        });
+  }
+
+  @Override
+  protected void onActivityResult(int request, int result, Intent data) {
+    super.onActivityResult(request, result, data);
+    if (result != RESULT_OK) return;
+    if (request == 202 && cameraUri != null) recognize(cameraUri);
+    else if (data != null && data.getData() != null) {
+      Uri uri = data.getData();
+      if (request == 201) recognize(uri);
+      else if (request == 301) export(uri);
+      else if (request == 302) restore(uri);
+    }
+  }
+
+  private void reports() {
+    LinearLayout p = page("Reports", false);
+    LinearLayout content = column(this);
+    pad(content, 20, 12, 20, 28);
+    add(p, scroll(content), -1);
+    LinearLayout months = row(this);
+    months.addView(
+        iconButton(
+            "back",
+            BLACK,
+            "Previous month",
+            () -> {
+              reportMonth.add(Calendar.MONTH, -1);
+              render();
+            }),
+        lp(42, 42));
+    TextView month = label(date(reportMonth.getTimeInMillis(), "MMMM yyyy"), 17, BLACK, true);
+    month.setGravity(Gravity.CENTER);
+    months.addView(month, new LinearLayout.LayoutParams(0, d(42), 1));
+    months.addView(
+        iconButton(
+            "next",
+            BLACK,
+            "Next month",
+            () -> {
+              reportMonth.add(Calendar.MONTH, 1);
+              render();
+            }),
+        lp(42, 42));
+    add(content, months, 48);
+    space(content, 18);
+    long expense = 0, income = 0;
+    Map<String, Long> sums = new LinkedHashMap<>();
+    for (String c : categories) sums.put(c, 0L);
+    for (Transaction t : store.all())
+      if (sameMonth(t.date, reportMonth) && included(t)) {
+        if (t.income) income += t.amountPaise;
+        else {
+          expense += t.amountPaise;
+          sums.put(t.category, sums.getOrDefault(t.category, 0L) + t.amountPaise);
+        }
+      }
+    LinearLayout total = column(this);
+    pad(total, 18, 18, 18, 18);
+    total.setBackground(bg(0xffffe675, 18, this));
+    add(total, label("Total Spending", 15, BLACK, true), -2);
+    space(total, 8);
+    add(total, label(money(expense), 30, BLACK, true), -2);
+    space(total, 8);
+    add(total, label("Income  " + money(income), 14, 0xff786d42, false), -2);
+    add(content, total, -2);
+    space(content, 20);
+    if (expense == 0) {
+      empty(content, "A fresh month", "Your spending report will grow as you add expenses.", false);
+      return;
+    }
+    Donut donut = new Donut(this, sums, expense);
+    add(content, donut, 210);
+    space(content, 12);
+    add(content, label("Spending by Category", 18, BLACK, true), 36);
+    for (String c : categories) {
+      long amount = sums.get(c);
+      if (amount == 0) continue;
+      LinearLayout row = row(this);
+      FrameLayout badge = new FrameLayout(this);
+      badge.setBackground(bg(colorFor(c), 12, this));
+      badge.addView(art(artFor(c)), fp(29, 29, Gravity.CENTER, 0, 0, 0, 0));
+      row.addView(badge, lp(42, 42));
+      TextView name = label(c, 15, BLACK, true);
+      pad(name, 12, 0, 0, 0);
+      row.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+      row.addView(
+          label(
+              money(amount) + "  ·  " + Math.round(100.0 * amount / expense) + "%",
+              13,
+              MUTED,
+              false));
+      add(content, row, 58);
+      row.setOnClickListener(
+          v -> {
+            screen = "Transactions";
+            categoryFilter = c;
+            filter = "Expense";
+            render();
+          });
+    }
+    space(content, 12);
+    TextView note =
+        label(
+            prefs.getBoolean("exclude_transfer", true)
+                ? "Internal transfers are excluded from totals."
+                : "Internal transfers are included in totals.",
+            12,
+            MUTED,
+            false);
+    add(content, note, -2);
+  }
+
+  private class Donut extends View {
+    final Map<String, Long> sums;
+    final long total;
+    final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    Donut(Context c, Map<String, Long> sums, long total) {
+      super(c);
+      this.sums = sums;
+      this.total = total;
+      setContentDescription("Expense breakdown by category");
+    }
+
+    protected void onDraw(Canvas canvas) {
+      float cx = getWidth() / 2f, cy = getHeight() / 2f, r = d(77);
+      RectF oval = new RectF(cx - r, cy - r, cx + r, cy + r);
+      paint.setStyle(Paint.Style.STROKE);
+      paint.setStrokeWidth(d(27));
+      float start = -90;
+      int i = 0;
+      for (String c : categories) {
+        float angle = 360f * sums.get(c) / total;
+        paint.setColor(
+            new int[] {0xffffb43d, 0xff49bcf1, 0xfff48fba, 0xff9c82fc, 0xff54d9b9, 0xffffd346}
+                [i++]);
+        if (angle > 0) canvas.drawArc(oval, start + 1, Math.max(1, angle - 2), false, paint);
+        start += angle;
+      }
+      paint.setStyle(Paint.Style.FILL);
+      paint.setColor(MUTED);
+      paint.setTextAlign(Paint.Align.CENTER);
+      paint.setTextSize(d(13));
+      canvas.drawText("This month", cx, cy - d(6), paint);
+      paint.setColor(BLACK);
+      paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+      paint.setTextSize(d(20));
+      canvas.drawText(money(total), cx, cy + d(20), paint);
+    }
+  }
+}

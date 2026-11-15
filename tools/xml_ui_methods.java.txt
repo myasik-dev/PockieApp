@@ -1,0 +1,244 @@
+  private View showLayout(int layout) {
+    View view=getLayoutInflater().inflate(layout,body,false);
+    body.addView(view);
+    return view;
+  }
+
+  private void bindText(View parent,int id,String value) { ((TextView)parent.findViewById(id)).setText(value); }
+  private void action(View parent,int id,Runnable callback) { parent.findViewById(id).setOnClickListener(v->callback.run()); }
+  private void toolbar(View page,String title,boolean search) {
+    bindText(page,R.id.toolbar_title,title);
+    action(page,R.id.toolbar_back,()->go("Home"));
+    View button=page.findViewById(R.id.toolbar_search);
+    button.setVisibility(search?View.VISIBLE:View.INVISIBLE);
+    button.setOnClickListener(v->searchDialog());
+  }
+
+  private void bottomNav() {
+    int[] items={R.id.nav_home,R.id.nav_transactions,R.id.nav_reports,R.id.nav_categories};
+    int[] icons={R.id.nav_home_icon,R.id.nav_transactions_icon,R.id.nav_reports_icon,R.id.nav_categories_icon};
+    int[] labels={R.id.nav_home_label,R.id.nav_transactions_label,R.id.nav_reports_label,R.id.nav_categories_label};
+    String[] names={"Home","Transactions","Reports","Categories"};
+    for(int i=0;i<names.length;i++) {
+      String name=names[i]; boolean selected=screen.equals(name); int tint=selected?BLACK:0xffbfbfbf;
+      action(navigation,items[i],()->go(name));
+      ((PockieIcon)navigation.findViewById(icons[i])).setIconColor(tint);
+      TextView label=navigation.findViewById(labels[i]);label.setTextColor(tint);
+      label.setTypeface(null, selected ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+    }
+    action(navigation,R.id.add_transaction,this::addChooser);
+  }
+
+  private void home() {
+    View page=showLayout(R.layout.screen_home);
+    action(page,R.id.open_settings,()->go("Settings"));
+    action(page,R.id.tracking_status,this::trackingStatus);
+    action(page,R.id.see_all,()->go("Transactions"));
+    List<Transaction> all=store.all();
+    boolean demo=!all.isEmpty()&&all.stream().allMatch(t->t.demo);
+    Calendar month=Calendar.getInstance();if(demo)month.setTimeInMillis(all.get(0).date);
+    long income=0,expense=0;
+    for(Transaction t:all)if(sameMonth(t.date,month)&&included(t)){if(t.income)income+=t.amountPaise;else expense+=t.amountPaise;}
+    bindText(page,R.id.home_month,demo?"October · Sample data":"This Month");
+    bindText(page,R.id.home_spending,money(expense));bindText(page,R.id.home_income,money(income));
+    bindText(page,R.id.home_average,money(expense/Math.max(1,month.get(Calendar.DAY_OF_MONTH))));
+    bindText(page,R.id.home_expense,money(expense));
+    page.findViewById(R.id.home_recent).setMinimumHeight(Math.max(d(200),getResources().getDisplayMetrics().heightPixels-d(420)));
+    LinearLayout list=page.findViewById(R.id.recent_transactions);
+    if(all.isEmpty())empty(list,"Your money, beautifully organized","Add your first expense or scan your bank SMS.",true);
+    else for(int i=0;i<Math.min(8,all.size());i++)transactionRow(list,all.get(i),false,false);
+    page.findViewById(R.id.clear_demo_home).setVisibility(demo?View.VISIBLE:View.GONE);
+    action(page,R.id.clear_demo_home,this::clearDemo);
+  }
+
+  private void empty(ViewGroup parent,String title,String message,boolean demo) {
+    View view=getLayoutInflater().inflate(R.layout.view_empty_state,parent,false);
+    bindText(view,R.id.empty_title,title);bindText(view,R.id.empty_message,message);
+    bindText(view,R.id.empty_action,demo?"Preview with sample data":"Add a transaction");
+    view.findViewById(R.id.empty_action).setBackgroundResource(demo?R.drawable.bg_pill_blue:R.drawable.bg_button_black);
+    action(view,R.id.empty_action,()->{if(demo){store.loadDemo();render();}else addChooser();});
+    parent.addView(view);
+  }
+
+  private void transactionRow(ViewGroup parent,Transaction t,boolean signed,boolean detail) {
+    View row=getLayoutInflater().inflate(R.layout.item_transaction,parent,false);
+    bindTransactionRow(row,t,signed,detail);parent.addView(row);
+  }
+
+  private void bindTransactionRow(View row,Transaction t,boolean signed,boolean detail) {
+    boolean godaddy=t.merchant.toLowerCase(Locale.ROOT).contains("godaddy");
+    String icon=t.category.equals("Food")?"food":t.category.equals("Transfers")?"person":godaddy?"cart":"shop";
+    int color=t.category.equals("Food")?0xffff7a00:t.category.equals("Transfers")?(t.merchant.startsWith("Sarath")?0xffffad30:0xff35b768):godaddy?BLUE:0xff8040ff;
+    row.findViewById(R.id.transaction_badge).setBackgroundTintList(ColorStateList.valueOf(color));
+    ((PockieIcon)row.findViewById(R.id.transaction_icon)).setIconName(icon);
+    bindText(row,R.id.transaction_merchant,t.merchant);
+    String subtitle=detail?date(t.date,"dd MMM yyyy, hh:mm a"):signed?(t.source.equals("SMS")||t.source.equals("Notification")||t.demo?"UPI • "+(t.reference.isEmpty()?t.account:t.reference):t.source+" • "+t.category):date(t.date,"dd MMM yyyy");
+    bindText(row,R.id.transaction_subtitle,subtitle);
+    TextView amount=row.findViewById(R.id.transaction_amount);amount.setText((signed?(t.income?"+ ":"- "):"")+money(t.amountPaise));
+    amount.setTextColor(signed?(t.income?GREEN:RED):BLACK);
+    row.setOnClickListener(detail?null:v->details(t));
+    row.setContentDescription(t.merchant+", "+(t.income?"income ":"expense ")+money(t.amountPaise));
+  }
+
+  private void transactions() {
+    View page=showLayout(R.layout.screen_transactions);
+    toolbar(page,categoryFilter.isEmpty()?"Transactions":categoryFilter+" Transactions",true);
+    TextView category=page.findViewById(R.id.category_filter_chip);
+    category.setVisibility(categoryFilter.isEmpty()?View.GONE:View.VISIBLE);category.setText("Category: "+categoryFilter+"   ×");
+    category.setOnClickListener(v->{categoryFilter="";render();});
+    TextView searched=page.findViewById(R.id.search_filter_chip);searched.setVisibility(query.isEmpty()?View.GONE:View.VISIBLE);searched.setText("Search: "+query+"   ×");searched.setOnClickListener(v->{query="";render();});
+    int[] ids={R.id.filter_all,R.id.filter_expense,R.id.filter_income};String[] names={"All","Expense","Income"};
+    for(int i=0;i<ids.length;i++){String name=names[i];TextView tab=page.findViewById(ids[i]);boolean selected=filter.equals(name);tab.setBackgroundResource(selected?R.drawable.bg_pill_black:R.drawable.bg_pill_outline);tab.setTextColor(selected?Color.WHITE:0xffb7b7b7);tab.setOnClickListener(v->{filter=name;render();});}
+    LinearLayout list=page.findViewById(R.id.transaction_list);String last="";int count=0;
+    for(Transaction t:store.all()) {
+      if((filter.equals("Expense")&&t.income)||(filter.equals("Income")&&!t.income)||(!categoryFilter.isEmpty()&&!categoryFilter.equals(t.category)))continue;
+      if(!query.isEmpty()&&!(t.merchant+" "+t.reference+" "+t.category+" "+t.account+" "+t.notes).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))continue;
+      String day=date(t.date,"dd MMMM yyyy");
+      if(!day.equals(last)){
+        TextView header=(TextView)getLayoutInflater().inflate(R.layout.item_date_header,list,false);header.setText(day);
+        if(count>0)((LinearLayout.LayoutParams)header.getLayoutParams()).topMargin=d(18);
+        list.addView(header);last=day;
+      }
+      transactionRow(list,t,true,false);count++;
+    }
+    if(count==0)empty(list,"No transactions found",query.isEmpty()?"Your transactions will appear here.":"Try a different merchant, category, or reference.",false);
+  }
+
+  private void searchDialog() {
+    View view=getLayoutInflater().inflate(R.layout.dialog_search,null);
+    EditText input=view.findViewById(R.id.search_input);input.setText(query);
+    AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Search transactions").setView(view)
+      .setPositiveButton("Search",(v,w)->{query=input.getText().toString().trim();screen="Transactions";render();})
+      .setNegativeButton("Cancel",null).setNeutralButton("Clear",(v,w)->{query="";render();}).create();
+    dialog.setOnShowListener(v->{input.requestFocus();dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);});dialog.show();
+  }
+
+  private void categoryScreen() {
+    View page=showLayout(R.layout.screen_categories);toolbar(page,"Categories",false);
+    int[] cards={R.id.card_food,R.id.card_fuel,R.id.card_shopping,R.id.card_business,R.id.card_recharge,R.id.card_transfers};
+    List<Transaction> all=store.all();
+    for(int i=0;i<cards.length;i++){
+      String name=categories[i];View card=page.findViewById(cards[i]);long amount=0;int count=0;
+      for(Transaction t:all)if(t.category.equals(name)){if(!t.income)amount+=t.amountPaise;count++;}
+      bindText(card,R.id.category_amount,money(amount));bindText(card,R.id.category_count,"("+count+")");
+      card.setContentDescription(name+", "+count+" transactions");card.setOnClickListener(v->{screen="Transactions";categoryFilter=name;filter="All";query="";render();});
+    }
+  }
+
+  private final class Sheet {
+    final BottomSheetDialog dialog;
+    final View view;
+    Sheet(int layout,String title,String subtitle){
+      dialog=new BottomSheetDialog(MainActivity.this);
+      view=getLayoutInflater().inflate(layout,null);bindText(view,R.id.sheet_title,title);bindText(view,R.id.sheet_subtitle,subtitle);
+      action(view,R.id.sheet_close,dialog::dismiss);dialog.setContentView(view);
+      dialog.getBehavior().setSkipCollapsed(true);dialog.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
+      dialog.setOnShowListener(x->{
+        if(dialog.getWindow()!=null){dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);if(Build.VERSION.SDK_INT>=28){WindowManager.LayoutParams a=dialog.getWindow().getAttributes();a.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;dialog.getWindow().setAttributes(a);}}
+        FrameLayout bottom=dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if(bottom!=null){bottom.setBackgroundResource(R.drawable.bg_sheet);bottom.setClipToOutline(true);bottom.getLayoutParams().height=ViewGroup.LayoutParams.WRAP_CONTENT;}
+        dialog.getBehavior().setMaxHeight(getResources().getDisplayMetrics().heightPixels-d(36));
+      });
+      if(dialog.getWindow()!=null)dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+    }
+  }
+
+  private void addChooser() {
+    Sheet sheet=new Sheet(R.layout.bottom_sheet_add_options,"Add or track expense","Choose a quick way to add your income or\nexpense");
+    action(sheet.view,R.id.scan_sms_choice,()->{sheet.dialog.dismiss();scanSms();});
+    action(sheet.view,R.id.manual_choice,()->{sheet.dialog.dismiss();editor(null,null);});
+    action(sheet.view,R.id.receipt_choice,()->{sheet.dialog.dismiss();receiptOptions();});sheet.dialog.show();
+  }
+
+  private void details(Transaction t) {
+    Sheet sheet=new Sheet(R.layout.bottom_sheet_transaction_details,"Transaction Details","Choose a quick way to add your income or\nexpense");
+    bindTransactionRow(sheet.view.findViewById(R.id.detail_transaction_summary),t,true,true);
+    LinearLayout fields=sheet.view.findViewById(R.id.transaction_detail_fields);
+    detailLine(fields,"Type",t.income?"Income":"Expense",t.income?GREEN:RED,t.income?0xffddf8e8:0xffffe2e4);
+    detailLine(fields,"Category",t.category,BLACK,colorFor(t.category));
+    detailLine(fields,"Account",t.account.isEmpty()?"Cash / not specified":t.account,BLACK,0);
+    detailLine(fields,"Reference No",t.reference.isEmpty()?t.source+"/"+t.id:t.reference,BLACK,0);
+    if(!t.notes.isEmpty())detailLine(fields,"Notes",t.notes,BLACK,0);
+    action(sheet.view,R.id.edit_transaction,()->editor(t,sheet.dialog));
+    action(sheet.view,R.id.delete_transaction,()->deleteDialog(t,sheet.dialog));sheet.dialog.show();
+  }
+
+  private void detailLine(ViewGroup parent,String title,String value,int color,int background) {
+    View row=getLayoutInflater().inflate(R.layout.item_transaction_detail,parent,false);bindText(row,R.id.detail_label,title);
+    TextView label=row.findViewById(R.id.detail_value);label.setText(value);label.setTextColor(color);
+    if(background!=0){label.setBackgroundResource(R.drawable.bg_value_pill);label.setBackgroundTintList(ColorStateList.valueOf(background));label.setPadding(d(10),d(5),d(10),d(5));}
+    parent.addView(row);
+  }
+
+  private void deleteDialog(Transaction t,BottomSheetDialog details) {
+    View view=getLayoutInflater().inflate(R.layout.dialog_delete_transaction,null);
+    bindText(view,R.id.dialog_title,"Delete "+(t.income?"Income":"Expense"));bindText(view,R.id.dialog_message,"Are you sure you want to delete this "+(t.income?"income":"expense")+" record?");
+    AlertDialog dialog=xmlDialog(view);action(view,R.id.dialog_cancel,dialog::dismiss);
+    action(view,R.id.dialog_confirm,()->{store.delete(t.id);dialog.dismiss();details.dismiss();render();});dialog.show();styleDialog(dialog);
+  }
+
+  private AlertDialog xmlDialog(View view){return new AlertDialog.Builder(this).setView(view).create();}
+  private void styleDialog(AlertDialog dialog){if(dialog.getWindow()!=null){dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);dialog.getWindow().setLayout(getResources().getDisplayMetrics().widthPixels-d(48),ViewGroup.LayoutParams.WRAP_CONTENT);}}
+  private void messageDialog(String title,String message,String negative,Runnable cancelled,String positive,Runnable confirmed){
+    View view=getLayoutInflater().inflate(R.layout.dialog_message,null);bindText(view,R.id.dialog_title,title);bindText(view,R.id.dialog_message,message);
+    AlertDialog dialog=xmlDialog(view);View cancel=view.findViewById(R.id.dialog_cancel);cancel.setVisibility(negative==null?View.GONE:View.VISIBLE);
+    if(negative!=null){bindText(view,R.id.dialog_cancel,negative);cancel.setOnClickListener(v->{dialog.dismiss();if(cancelled!=null)cancelled.run();});}
+    bindText(view,R.id.dialog_confirm,positive);action(view,R.id.dialog_confirm,()->{dialog.dismiss();if(confirmed!=null)confirmed.run();});dialog.show();styleDialog(dialog);
+  }
+
+  private void editor(Transaction original,BottomSheetDialog details) {
+    boolean editing=original!=null&&original.id>0;Transaction t=original==null?new Transaction():original.copy();
+    Sheet sheet=new Sheet(editing?R.layout.bottom_sheet_edit_transaction:R.layout.bottom_sheet_add_transaction,editing?"Edit "+(t.income?"Income":"Expense"):"Add Expense & Income","Choose a quick way to add your income or\nexpense");
+    View view=sheet.view;
+    if(!editing){
+      TextView expense=view.findViewById(R.id.type_expense),income=view.findViewById(R.id.type_income);
+      Runnable paint=()->{expense.setBackgroundResource(t.income?android.R.color.transparent:R.drawable.bg_pill_blue);expense.setTextColor(t.income?BLACK:Color.WHITE);income.setBackgroundResource(t.income?R.drawable.bg_pill_blue:android.R.color.transparent);income.setTextColor(t.income?Color.WHITE:BLACK);};
+      expense.setOnClickListener(v->{t.income=false;paint.run();});income.setOnClickListener(v->{t.income=true;paint.run();});paint.run();
+    }
+    EditText merchant=view.findViewById(R.id.merchant_input),amount=view.findViewById(R.id.amount_input),notes=view.findViewById(R.id.notes_input);
+    EditText account=view.findViewById(R.id.account_input),reference=view.findViewById(R.id.reference_input);
+    merchant.setText(t.merchant);amount.setText(t.amountPaise==0?"":BigDecimal.valueOf(t.amountPaise,2).stripTrailingZeros().toPlainString());notes.setText(t.notes);
+    if(account!=null)account.setText(t.account);if(reference!=null)reference.setText(t.reference);
+    TextView selectedDate=view.findViewById(R.id.selected_date);selectedDate.setText(t.date>0?date(t.date,"dd MMM yyyy"):"Date");selectedDate.setTextColor(t.date>0?BLACK:0xffa6a8ae);
+    action(view,R.id.date_selector,()->{
+      Calendar initial=Calendar.getInstance();initial.setTimeInMillis(t.date>0?t.date:System.currentTimeMillis());
+      new DatePickerDialog(this,(picker,year,month,day)->{Calendar chosen=Calendar.getInstance();chosen.setTimeInMillis(t.date>0?t.date:System.currentTimeMillis());chosen.set(year,month,day);t.date=chosen.getTimeInMillis();selectedDate.setText(date(t.date,"dd MMM yyyy"));selectedDate.setTextColor(BLACK);},initial.get(Calendar.YEAR),initial.get(Calendar.MONTH),initial.get(Calendar.DAY_OF_MONTH)).show();
+    });
+    TextView selectedCategory=view.findViewById(R.id.selected_category);selectedCategory.setText(t.category);
+    action(view,R.id.category_selector,()->new AlertDialog.Builder(this).setTitle("Choose category").setAdapter(new ArrayAdapter<>(this,R.layout.item_dialog_choice,R.id.choice_text,categories),(dialog,which)->{t.category=categories[which];selectedCategory.setText(t.category);}).show());
+    TextView hint=view.findViewById(R.id.receipt_review_hint);hint.setVisibility(t.source.equals("Receipt")?View.VISIBLE:View.GONE);
+    if(t.source.equals("Receipt"))hint.setText(t.amountPaise==0?"Couldn’t identify the receipt total. Enter the amount and review the other fields before saving.":"Review the scanned merchant, total, and date before saving.");
+    action(view,R.id.cancel_transaction,sheet.dialog::dismiss);
+    action(view,R.id.save_transaction,()->{
+      String name=merchant.getText().toString().trim();long value=BankParser.paise(amount.getText().toString().trim());
+      if(name.isEmpty()){merchant.setError("Enter a merchant or payee");merchant.requestFocus();return;}
+      if(value<=0||value>999999999999L){amount.setError("Enter a valid amount with up to 2 decimal places");amount.requestFocus();return;}
+      if(t.date<=0){toast("Choose the receipt date before saving.");return;}
+      t.merchant=name;t.amountPaise=value;t.notes=notes.getText().toString().trim();if(reference!=null)t.reference=reference.getText().toString().trim();if(account!=null)t.account=account.getText().toString().trim();
+      if(store.save(t)<=0){toast("This transaction already exists.");return;}
+      ((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(merchant.getWindowToken(),0);
+      sheet.dialog.dismiss();if(details!=null){details.dismiss();details(t);}render();toast(editing?"Transaction updated":"Transaction saved");
+    });
+    sheet.dialog.show();
+  }
+
+  private void settings() {
+    View page=showLayout(R.layout.screen_settings);toolbar(page,"Settings",false);
+    boolean sms=checkSelfPermission(Manifest.permission.READ_SMS)==PackageManager.PERMISSION_GRANTED&&checkSelfPermission(Manifest.permission.RECEIVE_SMS)==PackageManager.PERMISSION_GRANTED&&prefs.getBoolean("sms",false);
+    boolean notifications=notificationAccess()&&prefs.getBoolean("notifications",false);
+    bindText(page,R.id.tracking_title,sms||notifications?"All Set 🎉":"Make tracking automatic");
+    bindText(page,R.id.tracking_description,sms||notifications?"Your tracking is active":"Enable access to track\nbank transactions");
+    settingSwitch(page.findViewById(R.id.setting_sms),sms,enabled->{if(enabled)requestSms(false);else{prefs.edit().putBoolean("sms",false).apply();render();}});
+    settingSwitch(page.findViewById(R.id.setting_notifications),notifications,enabled->{if(enabled){prefs.edit().putBoolean("notifications",true).apply();startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));}else{prefs.edit().putBoolean("notifications",false).apply();render();}});
+    Set<String> banks=prefs.getStringSet("banks",new HashSet<>());bindText(page.findViewById(R.id.setting_banks),R.id.setting_subtitle,banks.isEmpty()?"All banks":String.join(", ",banks));action(page,R.id.setting_banks,this::bankFilter);
+    settingSwitch(page.findViewById(R.id.setting_transfers),prefs.getBoolean("exclude_transfer",true),enabled->{prefs.edit().putBoolean("exclude_transfer",enabled).apply();render();});
+    action(page,R.id.setting_backup,this::backupOptions);
+    action(page,R.id.setting_privacy,()->messageDialog("Privacy & Security","Your transaction database is stored in Pockie’s private app storage. Pockie does not upload your messages or transactions. Device backups are disabled. Receipt text is recognized on your device.\n\nOnly transaction messages are saved; OTPs, failed payments and promotions are ignored. You control SMS and notification access in Android Settings. Exported files are saved only where you choose.",null,null,"Done",null));
+    action(page,R.id.setting_about,()->messageDialog("Pockie 1.0.2","A little friend for your everyday expenses.\n\nBuilt with native Android XML layouts and Java. Track income, expenses and categories, scan receipts, and keep your records offline.",null,null,"Done",null));
+    page.findViewById(R.id.setting_clear_demo).setVisibility(store.all().stream().anyMatch(t->t.demo)?View.VISIBLE:View.GONE);action(page,R.id.setting_clear_demo,this::clearDemo);
+  }
+
+  private void settingSwitch(View row,boolean checked,java.util.function.Consumer<Boolean> action) {
+    androidx.appcompat.widget.SwitchCompat toggle=row.findViewById(R.id.setting_switch);toggle.setChecked(checked);toggle.setOnCheckedChangeListener((button,value)->action.accept(value));
+  }
+

@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <include layout="@layout/view_toolbar" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="none">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="28dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <FrameLayout
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:id="@+id/previous_month"
+                    android:contentDescription="@string/previous_month"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <com.pockie.app.PockieIcon
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        app:iconName="back"
+                        app:iconTint="#030505"
+                        android:importantForAccessibility="no"
+                        android:layout_gravity="center" />
+                </FrameLayout>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:id="@+id/report_month"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/november_2026"
+                    android:textSize="17sp"
+                    android:layout_weight="1"
+                    android:gravity="center" />
+                <FrameLayout
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:id="@+id/next_month"
+                    android:contentDescription="@string/next_month"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <com.pockie.app.PockieIcon
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        app:iconName="next"
+                        app:iconTint="#030505"
+                        android:importantForAccessibility="no"
+                        android:layout_gravity="center" />
+                </FrameLayout>
+            </LinearLayout>
+            <Space android:layout_width="match_parent" android:layout_height="18dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp"
+                android:background="@drawable/bg_report_total">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/total_spending"
+                    android:textSize="15sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/report_spending"
+                    style="@style/Pockie.Text.Bold"
+                    android:text="@string/text_0"
+                    android:textSize="30sp"
+                    android:layout_marginTop="8dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/report_income"
+                    style="@style/Pockie.Text"
+                    android:text="@string/income_0"
+                    android:textSize="14sp"
+                    android:textColor="#786D42"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+            <Space android:layout_width="match_parent" android:layout_height="20dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/report_empty"
+                android:orientation="vertical" />
+            <com.pockie.app.SpendingChartView
+                android:layout_width="match_parent"
+                android:layout_height="210dp"
+                android:id="@+id/spending_chart"
+                android:contentDescription="@string/expense_breakdown_by_category" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:id="@+id/report_category_heading"
+                style="@style/Pockie.Text.Bold"
+                android:text="@string/spending_by_category"
+                android:textSize="18sp"
+                android:layout_marginTop="12dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/report_categories"
+                android:orientation="vertical" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/report_transfer_note"
+                style="@style/Pockie.Text"
+                android:text="@string/internal_transfers_are_excluded_from_totals"
+                android:textSize="12sp"
+                android:textColor="#4E5760"
+                android:layout_marginTop="12dp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

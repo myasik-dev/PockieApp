@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="about" formatted="false">About</string>
+    <string name="account_optional" formatted="false">Account (optional)</string>
+    <string name="add_a_transaction" formatted="false">Add a transaction</string>
+    <string name="add_expense_income" formatted="false">Add Expense &amp; Income</string>
+    <string name="add_expense_or_income" formatted="false">Add expense or income</string>
+    <string name="add_your_first_expense_or_scan_your_bank_sms" formatted="false">Add your first expense or scan your bank SMS.</string>
+    <string name="all" formatted="false">All</string>
+    <string name="all_banks" formatted="false">All banks</string>
+    <string name="allow_sms_access" formatted="false">Allow SMS &amp; Notification Access</string>
+    <string name="allow_sms_access_2" formatted="false">Allow SMS &amp; Notification Access</string>
+    <string name="amount" formatted="false">Amount</string>
+    <string name="are_you_sure_you_want_to_delete_this_expense_record" formatted="false">Are you sure you want to delete this expense record?</string>
+    <string name="automatically" formatted="false">Automatically</string>
+    <string name="automatically_added" formatted="false">Automatically\nAdded</string>
+    <string name="automatically_read_sms_and_create_income_or_expense" formatted="false">Automatically read SMS and create\nincome or expense</string>
+    <string name="automatically_reads_bank_notifications_to_track_your_expense" formatted="false">Automatically reads bank notifications\nto track your expense</string>
+    <string name="automatically_reads_bank_sms_to_track_your_expense" formatted="false">Automatically reads bank SMS\nto track your expense</string>
+    <string name="avg_day" formatted="false">Avg / day</string>
+    <string name="back" formatted="false">Back</string>
+    <string name="backup_export" formatted="false">Backup &amp; Export</string>
+    <string name="bank_filter" formatted="false">Bank Filter</string>
+    <string name="bank_sms" formatted="false">Bank SMS</string>
+    <string name="business" formatted="false">Business</string>
+    <string name="cancel" formatted="false">Cancel</string>
+    <string name="cancel_2" formatted="false">CANCEL</string>
+    <string name="categories" formatted="false">Categories</string>
+    <string name="category" formatted="false">Category</string>
+    <string name="category_food" formatted="false">Category: Food   ×</string>
+    <string name="choose_a_quick_way_to_add_your_income_or_expense" formatted="false">Choose a quick way to add your income or\nexpense</string>
+    <string name="choose_an_option" formatted="false">Choose an option</string>
+    <string name="choose_category" formatted="false">Choose category</string>
+    <string name="clear" formatted="false">Clear</string>
+    <string name="clear_sample_data" formatted="false">Clear sample data</string>
+    <string name="close" formatted="false">Close</string>
+    <string name="continue_without_sms" formatted="false">Continue without SMS</string>
+    <string name="data_stays_only_on_your_device" formatted="false">Data stays only on your device</string>
+    <string name="date" formatted="false">Date</string>
+    <string name="delete" formatted="false">▣  Delete</string>
+    <string name="delete_2" formatted="false">DELETE</string>
+    <string name="delete_expense" formatted="false">Delete Expense</string>
+    <string name="done" formatted="false">Done</string>
+    <string name="edit" formatted="false">✎  Edit</string>
+    <string name="enable_access_to_track_bank_transactions" formatted="false">Enable access to track\nbank transactions</string>
+    <string name="everything_is_offline_secure" formatted="false">Everything is offline &amp; secure</string>
+    <string name="exclude_transfer" formatted="false">Exclude Transfer</string>
+    <string name="expense" formatted="false">Expense</string>
+    <string name="expense_breakdown_by_category" formatted="false">Expense breakdown by category</string>
+    <string name="export_your_data" formatted="false">Export your data</string>
+    <string name="food" formatted="false">Food</string>
+    <string name="fuel" formatted="false">Fuel</string>
+    <string name="get_started" formatted="false">Get Started</string>
+    <string name="hey_there" formatted="false">Hey there!</string>
+    <string name="home" formatted="false">Home</string>
+    <string name="i_m_pocki" formatted="false">I\'m Pocki</string>
+    <string name="income" formatted="false">Income</string>
+    <string name="income_0" formatted="false">Income  ₹ 0</string>
+    <string name="internal_transfers_are_excluded_from_totals" formatted="false">Internal transfers are excluded from totals.</string>
+    <string name="keep_your_own_transactions" formatted="false">Keep your own transactions</string>
+    <string name="kvb" formatted="false">KVB</string>
+    <string name="kvb_axis_sbi_hdfc_icici_more" formatted="false">KVB, AXIS, SBI, HDFC, ICICI &amp; more</string>
+    <string name="let_s_track_your_expense_today" formatted="false">Let’s track your expense\ntoday</string>
+    <string name="make_tracking_automatic" formatted="false">Make tracking automatic</string>
+    <string name="manually_add_your_income_or_expense_entry" formatted="false">Manually add your income or\nexpense entry</string>
+    <string name="mark_internal_transfer" formatted="false">Mark internal transfer</string>
+    <string name="merchant_category_or_reference" formatted="false">Merchant, category or reference</string>
+    <string name="merchant_payee_e_g_swiggy" formatted="false">Merchant / Payee (e.g. Swiggy)</string>
+    <string name="next_month" formatted="false">Next month</string>
+    <string name="no_banks_selected_means_all_banks" formatted="false">No banks selected means all banks.</string>
+    <string name="notes_optional" formatted="false">Notes (optional)</string>
+    <string name="notification_access" formatted="false">Notification Access</string>
+    <string name="november_2026" formatted="false">November 2026</string>
+    <string name="open_settings" formatted="false">Open settings</string>
+    <string name="pockie" formatted="false">Pockie</string>
+    <string name="previous_month" formatted="false">Previous month</string>
+    <string name="privacy_security" formatted="false">Privacy &amp; Security</string>
+    <string name="reading_your_receipt_on_this_device" formatted="false">Reading your receipt on this device…</string>
+    <string name="recent_expense" formatted="false">Recent Expense</string>
+    <string name="recharge" formatted="false">Recharge</string>
+    <string name="reference_no_optional" formatted="false">Reference No (optional)</string>
+    <string name="reports" formatted="false">Reports</string>
+    <string name="review_the_scanned_merchant_total_and_date_before_saving" formatted="false">Review the scanned merchant, total, and date before saving.</string>
+    <string name="sample_data_clear_to_start_tracking" formatted="false">Sample data · Clear to start tracking</string>
+    <string name="save" formatted="false">Save</string>
+    <string name="scan_receipt" formatted="false">Scan Receipt</string>
+    <string name="scan_receipts" formatted="false">Scan Receipts</string>
+    <string name="scan_sms" formatted="false">Scan SMS</string>
+    <string name="search" formatted="false">Search</string>
+    <string name="search_transactions" formatted="false">Search transactions</string>
+    <string name="search_your_expense" formatted="false">Search your expense</string>
+    <string name="see_all" formatted="false">See All</string>
+    <string name="shopping" formatted="false">Shopping</string>
+    <string name="sms_access" formatted="false">SMS Access</string>
+    <string name="spending_by_category" formatted="false">Spending by Category</string>
+    <string name="supports_all_major_banks" formatted="false">Supports all major banks</string>
+    <string name="swiggy" formatted="false">Swiggy</string>
+    <string name="swiggy_2" formatted="false">Swiggy</string>
+    <string name="take_a_photo_of_your_bills_and_create_an_expense" formatted="false">Take a photo of your bills and\ncreate an expense</string>
+    <string name="text_0" formatted="false">0</string>
+    <string name="text_0_0" formatted="false">₹ 0 · 0%</string>
+    <string name="text_0_2" formatted="false">(0)</string>
+    <string name="text_100_private" formatted="false">100% Private</string>
+    <string name="text_26_oct_2026" formatted="false">26 Oct 2026</string>
+    <string name="text_26_october_2026" formatted="false">26 October 2026</string>
+    <string name="text_328" formatted="false">     ₹328</string>
+    <string name="text_328_2" formatted="false">₹ 328</string>
+    <string name="this_month" formatted="false">This Month</string>
+    <string name="total_spending" formatted="false">Total Spending</string>
+    <string name="track_your_expenses" formatted="false">Track Your\nExpenses</string>
+    <string name="tracking_status" formatted="false">Tracking status</string>
+    <string name="transaction_date" formatted="false">Transaction date</string>
+    <string name="transaction_details" formatted="false">Transaction Details</string>
+    <string name="transactions" formatted="false">Transactions</string>
+    <string name="transfers" formatted="false">Transfers</string>
+    <string name="we_need_permission_to_read_your_bank_sms_to_automatically_track_" formatted="false">We need permission to read your bank\nSMS to automatically track\nyour expenses.</string>
+    <string name="we_read_your_bank_sms_and_organize_your_spending_for_you" formatted="false">We read your bank SMS &amp; Notification\nand organize your spending\nfor you.</string>
+    <string name="works_offline" formatted="false">Works offline</string>
+    <string name="your_a_c_xxxx5083_is_debited_rs_328_00_to_swiggy" formatted="false">Your a/c XXXX5083\nis debited Rs 328.00\nto SWIGGY</string>
+    <string name="your_data_never_leaves_your_phone" formatted="false">Your data never leaves your phone</string>
+    <string name="your_money_beautifully_organized" formatted="false">Your money, beautifully organized</string>
+    <string name="your_records_stay_on_this_device" formatted="false">Your records stay on this device.</string>
+</resources>

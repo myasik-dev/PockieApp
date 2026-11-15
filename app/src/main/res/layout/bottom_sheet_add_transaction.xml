@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="false"
+    android:scrollbars="none">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="18dp">
+        <include layout="@layout/view_sheet_header" />
+        <include layout="@layout/view_transaction_type" />
+        <Space android:layout_width="match_parent" android:layout_height="20dp" />
+        <include layout="@layout/view_field_merchant" />
+        <include layout="@layout/view_field_amount_date" />
+        <include layout="@layout/view_field_category" />
+        <include layout="@layout/view_field_reference" />
+        <include layout="@layout/view_field_notes" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/receipt_review_hint"
+            style="@style/Pockie.Text"
+            android:text="@string/review_the_scanned_merchant_total_and_date_before_saving"
+            android:textSize="12sp"
+            android:textColor="#4E5760"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp" />
+        <include layout="@layout/view_save_actions" />
+    </LinearLayout>
+</ScrollView>

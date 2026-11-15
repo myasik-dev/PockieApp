@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_field">
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="44dp"
+        android:id="@+id/type_expense"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/expense"
+        android:textSize="15sp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:background="@drawable/bg_pill_blue"
+        android:textColor="#FFFFFF"
+        android:clickable="true" />
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="44dp"
+        android:id="@+id/type_income"
+        style="@style/Pockie.Text.Bold"
+        android:text="@string/income"
+        android:textSize="15sp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:clickable="true" />
+</LinearLayout>
