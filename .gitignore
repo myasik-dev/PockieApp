@@ -1,12 +1,31 @@
+# Built binaries, packages, and local artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.zip
+artifacts/
+.artifacts/
+
+# Log and OS system files
+*.log
+.DS_Store
+Thumbs.db
+
+# Android Studio / IntelliJ IDE configuration
+.idea/
+*.iml
 .gradle/
 .gradle-home/
 .android/
-.idea/
-local.properties
-**/build/
-*.iml
-captures/
-*.log
-*.apk
-.DS_Store
 
+# Local SDK path (never commit this)
+local.properties
+
+# Build output directories
+build/
+**/build/
+.cxx/
+.externalNativeBuild/
+captures/
